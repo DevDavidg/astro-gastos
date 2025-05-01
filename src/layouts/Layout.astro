@@ -35,6 +35,14 @@ const { title } = Astro.props;
 				<p>&copy; {new Date().getFullYear()} Astro Gastos. Todos los derechos reservados.</p>
 			</div>
 		</footer>
+
+		<script>
+			if (sessionStorage.redirectTo) {
+				const redirectTo = sessionStorage.redirectTo;
+				sessionStorage.removeItem('redirectTo');
+				history.replaceState(null, '', redirectTo);
+			}
+		</script>
 	</body>
 </html>
 
