@@ -16,7 +16,6 @@ export const useCurrency = () => {
   const currency = userPreferences?.currency ?? "USD";
 
   useEffect(() => {
-    // Sync with localStorage for components that haven't been updated yet
     localStorage.setItem("currency", currency);
   }, [currency]);
 

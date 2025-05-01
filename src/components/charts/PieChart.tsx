@@ -114,7 +114,6 @@ const PieChart = () => {
     if (filtroVista === "mes") {
       return obtenerColorMes(clave);
     } else {
-      // Use a consistent color for personas
       return "#6B7280";
     }
   };

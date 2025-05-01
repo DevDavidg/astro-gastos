@@ -33,7 +33,6 @@ import HomeRedirect from '../components/auth/HomeRedirect';
 <script>
 	document.addEventListener('nuevoGasto', (e: any) => {
 		const customEvent = e as CustomEvent;
-		// Este evento será manejado por componentes React a través del contexto
 		console.log('Nuevo gasto:', customEvent.detail);
 	});
 </script>
