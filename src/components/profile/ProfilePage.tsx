@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabase";
 import type { Persona } from "../../types/gasto";
 import type { User } from "@supabase/supabase-js";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { BASE_PATH } from "../../lib/constants";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -69,7 +70,7 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      window.location.href = "/auth";
+      window.location.href = `${BASE_PATH}/auth`;
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -84,7 +85,7 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    window.location.href = "/auth";
+    window.location.href = `${BASE_PATH}/auth`;
     return null;
   }
 

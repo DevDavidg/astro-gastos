@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { BASE_PATH } from '../../lib/constants';
 ---
 
 <Layout title="Verificación de Email | Gastos App">
@@ -19,7 +20,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
         <p id="errorMessage" class="mt-2"></p>
       </div>
       <div class="mt-6">
-        <a href="/auth" class="text-blue-500 hover:underline">Volver a la página de inicio de sesión</a>
+        <a href={`${BASE_PATH}/auth`} class="text-blue-500 hover:underline">Volver a la página de inicio de sesión</a>
       </div>
     </div>
   </div>
@@ -27,6 +28,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 <script>
   import { supabase } from '../../lib/supabase';
+  import { BASE_PATH } from '../../lib/constants';
 
   function getHashParams() {
     const hash = window.location.hash.substring(1);
@@ -72,7 +74,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
         successEl?.classList.remove('hidden');
 
         setTimeout(() => {
-          window.location.href = '/';
+          window.location.href = `${BASE_PATH}/`;
         }, 2000);
       } else {
         throw new Error('Tipo de verificación desconocido');

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { BASE_PATH } from "../../lib/constants";
 
 export default function HomeRedirect() {
   const [loading, setLoading] = useState(true);
@@ -11,7 +12,7 @@ export default function HomeRedirect() {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session) {
-          window.location.href = "/auth";
+          window.location.href = `${BASE_PATH}/auth`;
         }
 
         setLoading(false);
@@ -23,5 +24,10 @@ export default function HomeRedirect() {
 
     checkAuth();
   }, []);
+
+  if (loading) {
+    return null;
+  }
+
   return null;
 }
