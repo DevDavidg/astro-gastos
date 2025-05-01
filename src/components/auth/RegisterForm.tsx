@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { BASE_PATH } from "../../lib/constants";
 
 export default function RegisterForm() {
   const [email, setEmail] = useState("");
@@ -34,6 +35,7 @@ export default function RegisterForm() {
           data: {
             nombre,
           },
+          emailRedirectTo: `${window.location.origin}${BASE_PATH}/auth/confirm`,
         },
       });
 

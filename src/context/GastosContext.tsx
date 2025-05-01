@@ -26,7 +26,7 @@ interface GastosContextType {
     gasto: Omit<
       Gasto,
       "id" | "fecha" | "usuarioid" | "fechaCreacion" | "fechaActualizacion"
-    >
+    > & { otraPersonaEmail?: string }
   ) => Promise<void>;
   eliminarGasto: (id: string) => Promise<void>;
   actualizarSueldoPersona: (personaId: string, monto: number) => Promise<void>;
@@ -130,24 +130,98 @@ export function GastosProvider({ children }: { children: ReactNode }) {
     gasto: Omit<
       Gasto,
       "id" | "fecha" | "usuarioid" | "fechaCreacion" | "fechaActualizacion"
-    >
+    > & { otraPersonaEmail?: string }
   ) => {
     if (!user) {
       throw new Error("Usuario no autenticado");
     }
 
     try {
+      const { otraPersonaEmail, ...gastoData } = gasto;
+
+      console.log("Creando nuevo gasto:", gastoData);
       const nuevoGasto = await crearGasto({
-        ...gasto,
-        personaid: gasto.personaid,
-        escompartido: gasto.escompartido,
-        porcentajepersona1: gasto.porcentajepersona1,
-        porcentajepersona2: gasto.porcentajepersona2,
+        ...gastoData,
+        personaid: gastoData.personaid,
+        escompartido: gastoData.escompartido,
+        porcentajepersona1: gastoData.porcentajepersona1,
+        porcentajepersona2: gastoData.porcentajepersona2,
         fecha: new Date(),
         usuarioid: user.id,
       });
 
       setGastos((prevGastos) => [...prevGastos, nuevoGasto]);
+
+      if (gastoData.escompartido && otraPersonaEmail) {
+        const personaPrincipal = personas.find(
+          (p) => p.id === gastoData.personaid
+        );
+
+        if (personaPrincipal) {
+          try {
+            console.log("Preparando para enviar email:", {
+              to: otraPersonaEmail,
+              personaPrincipal: personaPrincipal.nombre,
+              gasto: gastoData,
+            });
+
+            // Obtener el token de acceso de manera asíncrona
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+
+            if (!accessToken) {
+              throw new Error("No se pudo obtener el token de acceso");
+            }
+
+            const response = await fetch(
+              "https://dasmcjyukwazanjruxzk.supabase.co/functions/v1/send-email",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                  apikey: import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "",
+                },
+                body: JSON.stringify({
+                  to: otraPersonaEmail,
+                  subject: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
+                  html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <h2>Nuevo gasto compartido</h2>
+                      <p>${personaPrincipal.nombre} ha agregado un nuevo gasto compartido:</p>
+                      <ul>
+                        <li><strong>Descripción:</strong> ${gastoData.descripcion}</li>
+                        <li><strong>Monto:</strong> ${gastoData.monto}</li>
+                        <li><strong>Mes:</strong> ${gastoData.mes}</li>
+                        <li><strong>Tu porcentaje:</strong> ${gastoData.porcentajepersona2}%</li>
+                      </ul>
+                      <p>Puedes ver este gasto en tu cuenta.</p>
+                    </div>
+                  `,
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              const error = await response.json();
+              console.error("Error al enviar email:", error);
+            } else {
+              const data = await response.json();
+              console.log("Email enviado exitosamente:", data);
+            }
+          } catch (error) {
+            console.error("Error al enviar email:", {
+              error,
+              message: error instanceof Error ? error.message : "Unknown error",
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+          }
+        }
+      }
+
+      await recargarDatos();
     } catch (error) {
       console.error("Error al agregar gasto:", error);
       throw error;

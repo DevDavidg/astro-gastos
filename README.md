@@ -1,16 +1,31 @@
 # Astro Gastos
 
-Aplicación web para el seguimiento y gestión de gastos personales construida con Astro y React.
+Aplicación web moderna para el seguimiento y gestión de gastos personales, construida con Astro, React y TypeScript.
 
-## Características
+## 🚀 Características
 
-- 📊 Visualización de gastos en tablas y gráficos
-- 💰 Cálculo automático de totales y estadísticas
-- 💾 Persistencia de datos en localStorage
+- 📊 Visualización de gastos con gráficos interactivos usando Chart.js
+- 💰 Gestión de gastos con persistencia en Supabase
+- 📱 Aplicación híbrida con Capacitor para Android
+- 🎨 Interfaz moderna con TailwindCSS
+- 🔄 Estado reactivo con React Hooks
+- 🔒 Autenticación y seguridad con Supabase
 - 📱 Diseño responsive para todos los dispositivos
-- 🔄 Actualización reactiva de la interfaz
+- 📱 Mobile-first con optimizaciones específicas para pantallas < 400px
+- 🎯 Accesibilidad mejorada para dispositivos móviles
+- 📱 UI optimizada para interacción táctil
 
-## Instalación
+## 🛠️ Tecnologías Principales
+
+- [Astro](https://astro.build/) - Framework web moderno
+- [React](https://reactjs.org/) - Biblioteca para interfaces de usuario
+- [TypeScript](https://www.typescriptlang.org/) - JavaScript con tipado estático
+- [TailwindCSS](https://tailwindcss.com/) - Framework CSS utilitario
+- [Supabase](https://supabase.com/) - Backend como servicio
+- [Capacitor](https://capacitorjs.com/) - Framework para aplicaciones híbridas
+- [Chart.js](https://www.chartjs.org/) - Biblioteca de visualización de datos
+
+## 📦 Instalación
 
 ```bash
 # Clonar el repositorio
@@ -24,52 +39,71 @@ npm install
 npm run dev
 ```
 
-## Uso
-
-1. Abre la aplicación en `http://localhost:4321`
-2. Agrega tus gastos usando el formulario
-3. Visualiza tus gastos en la tabla principal
-4. Consulta el resumen y gráficos en la página "Resumen"
-5. Configura parámetros adicionales en "Configuración"
-
-## Estructura del Proyecto
+## 🏗️ Estructura del Proyecto
 
 ```
 astro-gastos/
 ├── src/                          # Código fuente
-│   ├── assets/                   # Imágenes y recursos
-│   ├── components/               # Componentes UI reutilizables
-│   │   ├── charts/               # Componentes de gráficos
-│   │   ├── inputs/               # Formularios y campos
-│   │   ├── table/                # Componentes de tablas
-│   │   └── ui/                   # Elementos UI básicos
-│   ├── context/                  # Contexto global de la aplicación
-│   ├── data/                     # Datos iniciales y mocks
+│   ├── assets/                   # Recursos estáticos
+│   ├── components/               # Componentes React
+│   ├── context/                  # Contexto de React
+│   ├── data/                     # Datos y mocks
 │   ├── hooks/                    # Hooks personalizados
 │   ├── layouts/                  # Plantillas de página
+│   ├── lib/                      # Utilidades y configuraciones
 │   ├── pages/                    # Páginas de la aplicación
-│   ├── styles/                   # Estilos SCSS modulares
+│   ├── services/                 # Servicios y API
+│   ├── styles/                   # Estilos globales
 │   ├── types/                    # Definiciones de TypeScript
 │   └── utils/                    # Funciones utilitarias
-├── public/                       # Archivos estáticos
+├── public/                       # Archivos públicos
+├── android/                      # Configuración de Android
+└── .github/                      # Configuración de GitHub
 ```
 
-## Tecnologías
+## 🚀 Scripts Disponibles
 
-- [Astro](https://astro.build/) - Framework web para sitios orientados a contenido
-- [React](https://reactjs.org/) - Biblioteca JavaScript para interfaces de usuario
-- [TypeScript](https://www.typescriptlang.org/) - JavaScript con tipado estático
-- [SCSS](https://sass-lang.com/) - Preprocesador CSS avanzado
+| Comando           | Descripción                           |
+| ----------------- | ------------------------------------- |
+| `npm run dev`     | Inicia el servidor de desarrollo      |
+| `npm run build`   | Compila la aplicación para producción |
+| `npm run preview` | Previsualiza la versión de producción |
+| `npm run astro`   | Ejecuta comandos de la CLI de Astro   |
 
-## Scripts Disponibles
+## 📱 Desarrollo Móvil
 
-- `npm run dev` - Inicia el servidor de desarrollo
-- `npm run build` - Compila la aplicación para producción
-- `npm run preview` - Previsualiza la versión de producción
+Para desarrollar la versión móvil:
 
-## Licencia
+```bash
+# Añadir plataforma Android
+npx cap add android
+
+# Abrir proyecto en Android Studio
+npx cap open android
+```
+
+## 🔧 Configuración
+
+1. Crea una cuenta en [Supabase](https://supabase.com/)
+2. Crea un nuevo proyecto
+3. Configura las variables de entorno en `.env`:
+
+```env
+PUBLIC_SUPABASE_URL=tu_url_de_supabase
+PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima
+```
+
+## 📄 Licencia
 
 MIT
+
+## 🤝 Contribuir
+
+Las contribuciones son bienvenidas. Por favor, abre un issue o envía un pull request.
+
+## 📞 Contacto
+
+Para cualquier pregunta o sugerencia, por favor abre un issue en el repositorio.
 
 ```sh
 npm create astro@latest -- --template basics
@@ -117,3 +151,17 @@ All commands are run from the root of the project, from a terminal:
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+## 📱 Características Mobile-First
+
+- Diseño optimizado para pantallas pequeñas (< 400px)
+- Componentes táctiles con áreas de toque amplias
+- Tipografía y espaciado adaptativos
+- Gráficos y tablas responsivos
+- Navegación optimizada para móvil
+- Formularios adaptados a pantallas pequeñas
+- Utilidades específicas para móvil:
+  - `.mobile-only` - Elementos visibles solo en móvil
+  - `.desktop-only` - Elementos visibles solo en desktop
+  - `.mobile-flex-col` - Layout flexible para móvil
+  - `.mobile-text-center` - Alineación de texto optimizada

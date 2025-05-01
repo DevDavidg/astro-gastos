@@ -17,7 +17,10 @@ export interface Persona {
   id: string;
   nombre: string;
   sueldo: number;
+  email: string;
   usuarioid: string;
+  fechaCreacion?: Date;
+  fechaActualizacion?: Date;
 }
 
 export interface Sueldo {
