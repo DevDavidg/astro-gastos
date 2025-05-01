@@ -3,6 +3,7 @@ import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import { supabase } from "../../lib/supabase";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { BASE_PATH } from "../../lib/constants";
 
 export default function AuthContainer() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,7 +16,7 @@ export default function AuthContainer() {
       } = await supabase.auth.getSession();
 
       if (session) {
-        window.location.href = "/";
+        window.location.href = `${BASE_PATH}/`;
       }
 
       setLoading(false);

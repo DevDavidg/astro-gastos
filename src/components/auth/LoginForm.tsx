@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { BASE_PATH } from "../../lib/constants";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -29,8 +30,9 @@ export default function LoginForm() {
         } else {
           setError(error.message);
         }
+        setLoading(false);
       } else {
-        window.location.href = "/";
+        window.location.href = `${BASE_PATH}/`;
       }
     } catch (error: any) {
       setError(error.message);
@@ -111,13 +113,13 @@ export default function LoginForm() {
             Email
           </label>
           <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="email"
             type="email"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="tu@email.com"
           />
         </div>
 
@@ -129,27 +131,27 @@ export default function LoginForm() {
             Contraseña
           </label>
           <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
             id="password"
             type="password"
+            placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="********"
           />
         </div>
 
         <div className="flex items-center justify-between">
           <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
             type="submit"
             disabled={loading}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full disabled:opacity-50 flex items-center justify-center"
           >
             {loading ? (
-              <>
-                <LoadingSpinner size="small" color="white" className="mr-2" />
-                <span>Iniciando sesión...</span>
-              </>
+              <div className="flex items-center justify-center">
+                <LoadingSpinner size="small" color="white" />
+                <span className="ml-2">Cargando...</span>
+              </div>
             ) : (
               "Iniciar sesión"
             )}
