@@ -4,20 +4,25 @@ import AddRowForm from '../components/inputs/AddRowForm.astro';
 import Card from '../components/ui/Card.astro';
 import GastosApp from '../components/GastosApp';
 import HomeRedirect from '../components/auth/HomeRedirect';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
+
+<script>
+	if (sessionStorage.redirectTo) {
+		const redirectTo = sessionStorage.redirectTo;
+		sessionStorage.removeItem('redirectTo');
+		history.replaceState(null, '', redirectTo);
+	}
+</script>
 
 <Layout title="Control de Gastos">
 	<HomeRedirect client:only="react" />
-	
+
 	<h1>Expense Tracker</h1>
-	
+
 	<Card className="mb-8">
 		<AddRowForm />
 	</Card>
-	
+
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 		<div class="lg:col-span-2">
 			<GastosApp client:load showChart={false} />

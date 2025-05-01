@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
     <title>Redirigiendo…</title>
     <script>
-      const redirectTo = sessionStorage.redirectTo || location.pathname;
-      location.replace("/astro-gastos/#" + redirectTo);
+      const redirectTo = location.pathname + location.search + location.hash;
+      sessionStorage.redirectTo = redirectTo;
+      location.replace("/astro-gastos/");
     </script>
   </head>
   <body>
-    <p>Redirigiendo…</p>
+    <p>Redirigiendo a la app…</p>
   </body>
 </html>

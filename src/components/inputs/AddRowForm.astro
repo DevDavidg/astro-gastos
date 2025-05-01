@@ -106,14 +106,14 @@ import { useCurrency } from '../../hooks/useCurrency';
   </div>
   
   <div class="w-full flex justify-end">
-    <Button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white">
+    <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">
       Agregar Gasto
     </Button>
   </div>
 </form>
 
 <script>
-  const form = document.getElementById('addGastoForm');
+  const form = document.getElementById('addGastoForm') as HTMLFormElement;
   const amountInput = document.getElementById('amount') as HTMLInputElement;
   const descInput = document.getElementById('description') as HTMLInputElement;
   const monthSelect = document.getElementById('month') as HTMLSelectElement;
