@@ -9,6 +9,7 @@ export interface Gasto {
   porcentajepersona1?: number;
   porcentajepersona2?: number;
   usuarioid: string;
+  otraPersonaEmail?: string;
   fechaCreacion?: Date;
   fechaActualizacion?: Date;
 }

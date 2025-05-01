@@ -140,6 +140,8 @@ export function GastosProvider({ children }: { children: ReactNode }) {
       const { otraPersonaEmail, ...gastoData } = gasto;
 
       console.log("Creando nuevo gasto:", gastoData);
+      console.log("Email de la otra persona:", otraPersonaEmail);
+
       const nuevoGasto = await crearGasto({
         ...gastoData,
         personaid: gastoData.personaid,
@@ -148,80 +150,94 @@ export function GastosProvider({ children }: { children: ReactNode }) {
         porcentajepersona2: gastoData.porcentajepersona2,
         fecha: new Date(),
         usuarioid: user.id,
+        otraPersonaEmail: otraPersonaEmail,
       });
 
-      setGastos((prevGastos) => [...prevGastos, nuevoGasto]);
+      console.log("Gasto creado:", nuevoGasto);
 
+      // Solo recargar datos una vez
+      await recargarDatos();
+
+      // Lógica de notificaciones
       if (gastoData.escompartido && otraPersonaEmail) {
         const personaPrincipal = personas.find(
           (p) => p.id === gastoData.personaid
         );
 
-        if (personaPrincipal) {
-          try {
-            console.log("Preparando para enviar email:", {
-              to: otraPersonaEmail,
-              personaPrincipal: personaPrincipal.nombre,
-              gasto: gastoData,
-            });
+        if (!personaPrincipal) {
+          console.error("No se encontró la persona principal");
+          return;
+        }
 
-            // Obtener el token de acceso de manera asíncrona
-            const {
-              data: { session },
-            } = await supabase.auth.getSession();
-            const accessToken = session?.access_token;
+        try {
+          // Primero, intentar buscar una persona con este email
+          const { data: personaDestino, error: personaError } = await supabase
+            .from("personas")
+            .select("usuarioid, email")
+            .eq("email", otraPersonaEmail)
+            .maybeSingle();
 
-            if (!accessToken) {
-              throw new Error("No se pudo obtener el token de acceso");
-            }
+          console.log("Búsqueda en personas:", personaDestino, personaError);
 
-            const response = await fetch(
-              "https://dasmcjyukwazanjruxzk.supabase.co/functions/v1/send-email",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${accessToken}`,
-                  apikey: import.meta.env.PUBLIC_SUPABASE_ANON_KEY || "",
-                },
-                body: JSON.stringify({
-                  to: otraPersonaEmail,
-                  subject: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
-                  html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                      <h2>Nuevo gasto compartido</h2>
-                      <p>${personaPrincipal.nombre} ha agregado un nuevo gasto compartido:</p>
-                      <ul>
-                        <li><strong>Descripción:</strong> ${gastoData.descripcion}</li>
-                        <li><strong>Monto:</strong> ${gastoData.monto}</li>
-                        <li><strong>Mes:</strong> ${gastoData.mes}</li>
-                        <li><strong>Tu porcentaje:</strong> ${gastoData.porcentajepersona2}%</li>
-                      </ul>
-                      <p>Puedes ver este gasto en tu cuenta.</p>
-                    </div>
-                  `,
-                }),
-              }
+          if (!personaDestino) {
+            // Si no está en la tabla personas, intentar usar RPC para buscar en auth.users
+            console.log("Buscando usuario con email:", otraPersonaEmail);
+
+            const { data: authUser, error: authError } = await supabase.rpc(
+              "get_user_id_by_email",
+              { email_input: otraPersonaEmail }
             );
 
-            if (!response.ok) {
-              const error = await response.json();
-              console.error("Error al enviar email:", error);
+            console.log("Resultado de búsqueda RPC:", authUser);
+            console.log("Error de búsqueda RPC:", authError);
+
+            if (authUser && authUser.length > 0) {
+              console.log("Usuario encontrado con ID:", authUser[0].id);
+              // Crear notificación directa
+              const { error: notificationError } = await supabase
+                .from("notifications")
+                .insert({
+                  user_id: authUser[0].id,
+                  title: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
+                  message: `${gastoData.descripcion} - Monto: ${gastoData.monto} - Tu porcentaje: ${gastoData.porcentajepersona2}%`,
+                });
+
+              if (notificationError) {
+                console.error(
+                  "Error al crear notificación:",
+                  notificationError
+                );
+              } else {
+                console.log(
+                  "Notificación creada exitosamente para usuario auth"
+                );
+              }
             } else {
-              const data = await response.json();
-              console.log("Email enviado exitosamente:", data);
+              console.log("No se encontró usuario en auth con ese email");
             }
-          } catch (error) {
-            console.error("Error al enviar email:", {
-              error,
-              message: error instanceof Error ? error.message : "Unknown error",
-              stack: error instanceof Error ? error.stack : undefined,
-            });
+          } else {
+            // Usuario existe en personas, crear notificación normal
+            console.log("Usuario encontrado en personas:", personaDestino);
+            const { error: notificationError } = await supabase
+              .from("notifications")
+              .insert({
+                user_id: personaDestino.usuarioid,
+                title: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
+                message: `${gastoData.descripcion} - Monto: ${gastoData.monto} - Tu porcentaje: ${gastoData.porcentajepersona2}%`,
+              });
+
+            if (notificationError) {
+              console.error("Error al crear notificación:", notificationError);
+            } else {
+              console.log(
+                "Notificación creada exitosamente para usuario en personas"
+              );
+            }
           }
+        } catch (error) {
+          console.error("Error al procesar notificación:", error);
         }
       }
-
-      await recargarDatos();
     } catch (error) {
       console.error("Error al agregar gasto:", error);
       throw error;
@@ -230,10 +246,24 @@ export function GastosProvider({ children }: { children: ReactNode }) {
 
   const eliminarGasto = async (id: string) => {
     try {
-      await eliminarGastoApi(id);
-      setGastos((prev) => prev.filter((gasto) => gasto.id !== id));
+      // Actualizar el estado local inmediatamente para una respuesta más rápida
+      setGastos((prevGastos) => {
+        const newGastos = prevGastos.filter((g) => g.id !== id);
+        // Disparar evento después de actualizar el estado
+        window.dispatchEvent(
+          new CustomEvent("gastoEliminado", { detail: { id } })
+        );
+        return newGastos;
+      });
+
+      // Eliminar el gasto en segundo plano
+      eliminarGastoApi(id).catch((error) => {
+        console.error("Error al eliminar el gasto:", error);
+        // Si hay un error, recargamos los datos para mantener la sincronización
+        recargarDatos();
+      });
     } catch (error) {
-      console.error("Error al eliminar gasto:", error);
+      console.error("Error al eliminar el gasto:", error);
       throw error;
     }
   };

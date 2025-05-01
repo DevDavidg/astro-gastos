@@ -10,75 +10,51 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("PUBLIC_SUPABASE_URL") ?? "",
-      Deno.env.get("PUBLIC_SUPABASE_ANON_KEY") ?? ""
+    // Crear cliente de Supabase con la clave de servicio
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Parse request body
     const { to, subject, content } = await req.json();
 
-    // Validate required fields
     if (!to || !subject || !content) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
-        {
-          headers: corsHeaders,
-          status: 400,
-        }
+        { headers: corsHeaders, status: 400 }
       );
     }
 
-    // Send email using Supabase
-    const { data, error } = await supabaseClient.auth.admin.sendEmail({
-      to,
-      subject,
-      html: content,
+    // Usar el servicio de email incorporado
+    const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(to, {
+      data: {
+        message: content,
+      },
     });
 
     if (error) {
       console.error("Error al enviar email:", error);
-      return new Response(
-        JSON.stringify({
-          error: "Error sending email",
-          details: error.message,
-        }),
-        {
-          headers: corsHeaders,
-          status: 500,
-        }
-      );
-    }
-
-    // Return success response
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data,
-      }),
-      {
-        headers: corsHeaders,
-        status: 200,
-      }
-    );
-  } catch (error) {
-    console.error("Error en send-shared-expense-email:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
+      return new Response(JSON.stringify({ error: error.message }), {
         headers: corsHeaders,
         status: 500,
-      }
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: corsHeaders,
+      status: 200,
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { headers: corsHeaders, status: 500 }
     );
   }
 });

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.200.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,11 +26,16 @@ serve(async (req) => {
       );
     }
 
-    const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
-
-    if (!sendgridApiKey) {
-      throw new Error("Missing SendGrid API key");
-    }
+    // Crear cliente de Supabase
+    const supabaseClient = createClient(
+      Deno.env.get("PUBLIC_SUPABASE_URL") ?? "",
+      Deno.env.get("PUBLIC_SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
 
     const { to, subject, html } = await req.json();
 
@@ -40,42 +46,22 @@ serve(async (req) => {
       );
     }
 
-    // Usar SendGrid para enviar el email
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${sendgridApiKey}`,
-      },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: to }],
-          },
-        ],
-        from: {
-          email: "noreply@yourdomain.com", // Cambia esto por tu email verificado
-          name: "Sistema de Gastos",
-        },
-        subject,
-        content: [
-          {
-            type: "text/html",
-            value: html,
-          },
-        ],
-      }),
+    // Usar Supabase para enviar el email
+    const { data, error } = await supabaseClient.auth.admin.sendEmail({
+      to,
+      subject,
+      html: html,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (error) {
+      console.error("Error al enviar email con Supabase:", error);
       return new Response(
         JSON.stringify({ error: error.message || "Error sending email" }),
-        { headers: corsHeaders, status: response.status }
+        { headers: corsHeaders, status: 500 }
       );
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, data }), {
       headers: corsHeaders,
       status: 200,
     });

@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { Gasto } from "../../types/gasto";
 import { formatearMoneda } from "../../utils/formatearMoneda";
 import { useGastos } from "../../context/GastosContext";
 import { useCurrency } from "../../hooks/useCurrency";
+import { obtenerEmailPersona } from "../../services/gastoService";
 
 interface TableRowProps {
   gasto: Gasto;
@@ -15,6 +16,17 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
   const { formatCurrency } = useCurrency();
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEmail = async () => {
+      console.log("Fetching email for gasto:", gasto);
+      const personaEmail = await obtenerEmailPersona(gasto.personaid);
+      console.log("Email fetched:", personaEmail);
+      setEmail(personaEmail);
+    };
+    fetchEmail();
+  }, [gasto.personaid]);
 
   const handleDelete = () => {
     setIsDeleting(true);
@@ -131,7 +143,7 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
             gasto.personaid
           )}`}
         >
-          {obtenerNombrePersona(gasto.personaid)}
+          {email || obtenerNombrePersona(gasto.personaid)}
         </span>
       </td>
       <td className="p-4">{renderizarInfoCompartido()}</td>

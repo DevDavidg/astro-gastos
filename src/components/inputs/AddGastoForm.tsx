@@ -1,16 +1,115 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useGastos } from "../../context/GastosContext";
 import { PersonaSelector } from "./PersonaSelector";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { supabase } from "../../lib/supabase";
 
 export const AddGastoForm: React.FC = () => {
-  const { agregarGasto, isLoading, personas } = useGastos();
+  const { agregarGasto, isLoading, personas, gastos } = useGastos();
   const [isShared, setIsShared] = useState(false);
   const [percentage1, setPercentage1] = useState(50);
   const [percentage2, setPercentage2] = useState(50);
   const [selectedPersona, setSelectedPersona] = useState<string>("");
   const [otraPersonaEmail, setOtraPersonaEmail] = useState("");
+  const [monto, setMonto] = useState<string>("");
+  const [descripcion, setDescripcion] = useState<string>("");
+  const [mes, setMes] = useState<string>("enero");
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Set default persona when component mounts
+  useEffect(() => {
+    if (personas && personas.length > 0) {
+      // Get current user's email from Supabase
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          // Find persona that matches user's email
+          const userPersona = personas.find((p) => p.email === user.email);
+          if (userPersona) {
+            setSelectedPersona(userPersona.id);
+          }
+        }
+      });
+    }
+  }, [personas]);
+
+  // Generate default description
+  const generateDefaultDescription = () => {
+    if (!mes) return "Nombre de gasto";
+
+    // Get all gastos for the selected month
+    const gastosDelMes = gastos.filter((g) => g.mes === mes);
+
+    // Find the highest number in existing descriptions
+    let maxNumber = 0;
+    gastosDelMes.forEach((g) => {
+      const match = g.descripcion.match(/\((\d+)\)$/);
+      if (match) {
+        const num = parseInt(match[1]);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+
+    return `Nombre de gasto${maxNumber > 0 ? ` (${maxNumber + 1})` : ""}`;
+  };
+
+  // Update description when month changes
+  useEffect(() => {
+    setDescripcion(generateDefaultDescription());
+  }, [mes, gastos]);
+
+  // Sync percentages
+  const handlePercentageChange = (value: number, isPercentage1: boolean) => {
+    if (isPercentage1) {
+      setPercentage1(value);
+      setPercentage2(100 - value);
+    } else {
+      setPercentage2(value);
+      setPercentage1(100 - value);
+    }
+  };
+
+  // Handle monto input
+  const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty string, numbers, and decimal point
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setMonto(value);
+    }
+  };
+
+  // Función para emitir el evento de preview
+  const emitPreviewEvent = () => {
+    if (!selectedPersona || !monto || !descripcion || !mes) return;
+
+    const previewGasto = {
+      mes,
+      descripcion,
+      monto: parseFloat(monto),
+      personaid: selectedPersona,
+      escompartido: isShared,
+      porcentajepersona1: isShared ? percentage1 : 100,
+      porcentajepersona2: isShared ? percentage2 : 0,
+      otraPersonaEmail: isShared ? otraPersonaEmail : undefined,
+    };
+
+    document.dispatchEvent(
+      new CustomEvent("gastoPreview", { detail: previewGasto })
+    );
+  };
+
+  // Emit preview event when any relevant field changes
+  useEffect(() => {
+    emitPreviewEvent();
+  }, [
+    monto,
+    descripcion,
+    mes,
+    selectedPersona,
+    isShared,
+    percentage1,
+    percentage2,
+    otraPersonaEmail,
+  ]);
 
   if (isLoading) {
     return (
@@ -21,6 +120,23 @@ export const AddGastoForm: React.FC = () => {
       </div>
     );
   }
+
+  // Función para validar si el email existe
+  const validarEmail = async (email: string) => {
+    // Primero buscar en la tabla personas
+    const { data, error } = await supabase
+      .from("personas")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    // Si se encuentra en personas, está validado
+    if (data) return true;
+
+    // Si no está en personas, podría estar solo registrado en auth
+    // En este caso, informar al usuario pero permitir continuar
+    return false;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,16 +150,27 @@ export const AddGastoForm: React.FC = () => {
       return;
     }
 
-    const formData = new FormData(e.currentTarget);
+    const montoValue = parseFloat(monto);
+    if (isNaN(montoValue)) {
+      alert("Por favor ingresa un monto válido");
+      return;
+    }
+
+    // Validar que el monto no exceda el límite
+    if (montoValue > 99999999.99) {
+      alert("El monto no puede exceder $99,999,999.99");
+      return;
+    }
+
     const gasto = {
-      mes: formData.get("mes") as string,
-      descripcion: formData.get("descripcion") as string,
-      monto: Number(formData.get("monto")),
+      mes,
+      descripcion,
+      monto: montoValue,
       personaid: selectedPersona,
       escompartido: isShared,
       porcentajepersona1: isShared ? percentage1 : 100,
       porcentajepersona2: isShared ? percentage2 : 0,
-      otraPersonaEmail: isShared ? otraPersonaEmail : null,
+      otraPersonaEmail: isShared ? otraPersonaEmail : undefined,
     };
 
     console.log("Nuevo gasto:", gasto);
@@ -58,6 +185,11 @@ export const AddGastoForm: React.FC = () => {
       setPercentage1(50);
       setPercentage2(50);
       setOtraPersonaEmail("");
+      setMonto("");
+      setDescripcion(generateDefaultDescription());
+      setMes("enero");
+      // Recargar la página después de agregar el gasto
+      window.location.reload();
     } catch (error) {
       console.error("Error al agregar gasto:", error);
     }
@@ -75,13 +207,14 @@ export const AddGastoForm: React.FC = () => {
               Monto
             </label>
             <input
-              type="number"
+              type="text"
               id="monto"
               name="monto"
-              step="0.01"
-              min="0"
               required
+              value={monto}
+              onChange={handleMontoChange}
               className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+              placeholder="0.00"
             />
           </div>
 
@@ -97,6 +230,8 @@ export const AddGastoForm: React.FC = () => {
               id="descripcion"
               name="descripcion"
               required
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
               className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
             />
           </div>
@@ -112,6 +247,8 @@ export const AddGastoForm: React.FC = () => {
               id="mes"
               name="mes"
               required
+              value={mes}
+              onChange={(e) => setMes(e.target.value)}
               className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
             >
               <option value="enero">Enero</option>
@@ -193,7 +330,9 @@ export const AddGastoForm: React.FC = () => {
                 min="0"
                 max="100"
                 value={percentage1}
-                onChange={(e) => setPercentage1(parseInt(e.target.value))}
+                onChange={(e) =>
+                  handlePercentageChange(parseInt(e.target.value), true)
+                }
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               />
             </div>
@@ -212,7 +351,9 @@ export const AddGastoForm: React.FC = () => {
                 min="0"
                 max="100"
                 value={percentage2}
-                onChange={(e) => setPercentage2(parseInt(e.target.value))}
+                onChange={(e) =>
+                  handlePercentageChange(parseInt(e.target.value), false)
+                }
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               />
             </div>

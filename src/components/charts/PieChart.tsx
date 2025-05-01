@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import type { Gasto } from "../../types/gasto";
+import type { Gasto, MesType } from "../../types/gasto";
 import { calcularTotalPorMes } from "../../utils/calcularTotales";
 import { useGastos } from "../../context/GastosContext";
-import { obtenerColorMes } from "../../utils/colorMeses";
+import { obtenerColorMes, generarTonoGasto } from "../../utils/colorMeses";
 import { useCurrency } from "../../hooks/useCurrency";
 
 const PieChart = () => {
@@ -67,11 +67,11 @@ const PieChart = () => {
 
   const datosGrafico = useCallback(() => {
     if (filtroVista === "mes") {
-      return calcularTotalPorMes(gastos);
+      return calcularTotalPorMes(gastosFiltrados());
     } else {
-      return calcularGastosPorPersona(gastos);
+      return calcularGastosPorPersona(gastosFiltrados());
     }
-  }, [filtroVista, gastos, calcularGastosPorPersona]);
+  }, [filtroVista, gastosFiltrados, calcularGastosPorPersona]);
 
   const calcularPorcentajesGrafico = useCallback(
     (datos: Record<string, number>) => {
@@ -112,7 +112,12 @@ const PieChart = () => {
 
   const obtenerColor = (clave: string) => {
     if (filtroVista === "mes") {
-      return obtenerColorMes(clave);
+      const colorBase = obtenerColorMes(clave as MesType);
+      const gastosDelMes = gastos.filter((g) => g.mes === clave);
+      const index = gastosDelMes.findIndex(
+        (g) => g === gastos[gastos.length - 1]
+      );
+      return generarTonoGasto(colorBase, index, gastosDelMes.length);
     } else {
       return "#6B7280";
     }
@@ -344,29 +349,38 @@ const PieChart = () => {
   }, [previewGasto, dibujarGrafico]);
 
   useEffect(() => {
+    dibujarGrafico(1);
+
     const handleNuevoGasto = () => {
       setAnimProgress(0);
-
       setPreviewGasto(null);
+      dibujarGrafico(1);
     };
 
-    document.addEventListener("nuevoGasto", handleNuevoGasto);
-    return () => {
-      document.removeEventListener("nuevoGasto", handleNuevoGasto);
+    const handleGastoEliminado = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      console.log("Gasto eliminado:", customEvent.detail);
+      setAnimProgress(0);
+      setPreviewGasto(null);
+      dibujarGrafico(1);
     };
-  }, []);
 
-  useEffect(() => {
     const handleGastoPreview = (e: Event) => {
       const customEvent = e as CustomEvent;
       setPreviewGasto(customEvent.detail);
+      dibujarGrafico(1);
     };
 
+    window.addEventListener("nuevoGasto", handleNuevoGasto);
+    window.addEventListener("gastoEliminado", handleGastoEliminado);
     document.addEventListener("gastoPreview", handleGastoPreview);
+
     return () => {
+      window.removeEventListener("nuevoGasto", handleNuevoGasto);
+      window.removeEventListener("gastoEliminado", handleGastoEliminado);
       document.removeEventListener("gastoPreview", handleGastoPreview);
     };
-  }, []);
+  }, [gastos, filtroVista, animProgress, dibujarGrafico]);
 
   const datosOrdenados = Object.entries(datosGrafico()).sort(
     ([, montoA], [, montoB]) => montoB - montoA
