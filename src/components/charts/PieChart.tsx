@@ -406,15 +406,15 @@ const PieChart = () => {
 
   return (
     <div className="w-full h-full">
-      <div className="mb-6 flex flex-wrap gap-4">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-4">
         <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
-          <span className="text-gray-600">Ver por:</span>
+          <span className="text-gray-600 text-sm sm:text-base">Ver por:</span>
           <select
             value={filtroVista}
             onChange={(e) =>
               setFiltroVista(e.target.value as "mes" | "persona")
             }
-            className="p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all text-sm sm:text-base"
           >
             <option value="mes">Mes</option>
             <option value="persona">Persona</option>
@@ -422,11 +422,11 @@ const PieChart = () => {
         </div>
 
         <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
-          <span className="text-gray-600">Filtrar:</span>
+          <span className="text-gray-600 text-sm sm:text-base">Filtrar:</span>
           <select
             value={personaSeleccionada}
             onChange={(e) => setPersonaSeleccionada(e.target.value)}
-            className="p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all text-sm sm:text-base"
           >
             <option value="todos">Todos</option>
             {personas.map((persona) => (
@@ -438,19 +438,19 @@ const PieChart = () => {
         </div>
       </div>
 
-      <div className="relative bg-white rounded-xl shadow-md p-6 border border-gray-100 transition-all hover:shadow-lg">
+      <div className="relative bg-white rounded-xl shadow-md p-2 sm:p-4 md:p-6 border border-gray-100 transition-all hover:shadow-lg">
         <PreviewBadge />
 
-        <canvas
-          ref={canvasRef}
-          width={300}
-          height={300}
-          className="mx-auto cursor-pointer"
-          onMouseMove={detectarSegmentoHover}
-          onMouseLeave={() => setHoveredSlice(null)}
-        />
+        <div className="relative w-full aspect-square max-w-[300px] mx-auto">
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full cursor-pointer"
+            onMouseMove={detectarSegmentoHover}
+            onMouseLeave={() => setHoveredSlice(null)}
+          />
+        </div>
 
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           {datosOrdenados.map(([clave, monto]) => {
             const isPreviewCategory =
               previewGasto &&
@@ -461,7 +461,7 @@ const PieChart = () => {
             return (
               <div
                 key={clave}
-                className={`flex items-center p-3 rounded-lg transition-all ${
+                className={`flex items-center p-2 sm:p-3 rounded-lg transition-all ${
                   hoveredSlice === clave
                     ? "bg-gray-100 scale-105"
                     : isPreviewCategory
@@ -472,20 +472,20 @@ const PieChart = () => {
                 onMouseLeave={() => setHoveredSlice(null)}
               >
                 <span
-                  className="w-5 h-5 rounded-md inline-block mr-3 shadow-sm"
+                  className="w-4 h-4 sm:w-5 sm:h-5 rounded-md inline-block mr-2 sm:mr-3 shadow-sm"
                   style={obtenerEstilosConsistentes(clave)}
                 />
-                <div className="flex-1">
-                  <span className="font-medium text-gray-800">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-gray-800 text-sm sm:text-base truncate">
                     {filtroVista === "mes"
                       ? clave
                       : obtenerNombrePersona(clave)}
                   </span>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-sm text-gray-600">
+                  <div className="flex justify-between mt-0.5 sm:mt-1">
+                    <span className="text-xs sm:text-sm text-gray-600 truncate mr-2">
                       {formatCurrency(monto)}
                     </span>
-                    <span className="text-sm font-semibold text-indigo-600">
+                    <span className="text-xs sm:text-sm font-semibold text-indigo-600 whitespace-nowrap">
                       {((monto / total) * 100).toFixed(1)}%
                     </span>
                   </div>

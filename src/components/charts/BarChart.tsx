@@ -90,14 +90,16 @@ const BarChart = () => {
   }, [gastos, previewGasto]);
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-6">Gastos por Mes</h3>
+    <div className="bg-white shadow rounded-lg p-2 sm:p-4 md:p-6">
+      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4 md:mb-6">
+        Gastos por Mes
+      </h3>
 
-      <div className="relative">
-        <canvas ref={canvasRef} className="w-full h-64" />
+      <div className="relative w-full aspect-[4/3] max-w-[600px] mx-auto">
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2 sm:space-y-3 md:space-y-4 mt-3 sm:mt-4 md:mt-6">
         {datosOrdenados.map(([mes, monto], index) => {
           const porcentaje = ((monto / total) * 100).toFixed(1);
           const gastosDelMes = gastos.filter((g) => g.mes === mes);
@@ -107,25 +109,29 @@ const BarChart = () => {
           return (
             <div
               key={mes}
-              className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+              className={`flex items-center justify-between p-2 sm:p-3 md:p-4 rounded-lg transition-all ${
                 isPreviewCategory
                   ? "bg-indigo-50 border border-indigo-100"
                   : "bg-gray-50"
               }`}
               style={{ backgroundColor: color }}
             >
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
                 <div
-                  className="w-4 h-4 rounded-full"
+                  className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="font-medium text-gray-900">{mes}</span>
+                <span className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                  {mes}
+                </span>
               </div>
-              <div className="text-right">
-                <div className="font-medium text-gray-900">
+              <div className="text-right ml-2">
+                <div className="font-medium text-gray-900 text-sm sm:text-base whitespace-nowrap">
                   {formatCurrency(monto)}
                 </div>
-                <div className="text-sm text-gray-500">{porcentaje}%</div>
+                <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
+                  {porcentaje}%
+                </div>
               </div>
             </div>
           );

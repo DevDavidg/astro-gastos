@@ -56,12 +56,12 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
     const persona2 = personas[1];
 
     return (
-      <div className="text-xs space-y-1 bg-indigo-50 p-2 rounded-lg border border-indigo-100">
+      <div className="text-xs space-y-1 bg-indigo-50 p-1.5 sm:p-2 rounded-lg border border-indigo-100">
         <div className="flex justify-between items-center">
           <span className="text-gray-700">
             {persona1?.nombre || "Persona 1"}:
           </span>
-          <span className="font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded">
+          <span className="font-medium bg-indigo-100 text-indigo-800 px-1.5 sm:px-2 py-0.5 rounded">
             {gasto.porcentajepersona1}%
           </span>
         </div>
@@ -69,7 +69,7 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
           <span className="text-gray-700">
             {persona2?.nombre || "Persona 2"}:
           </span>
-          <span className="font-medium bg-pink-100 text-pink-800 px-2 py-0.5 rounded">
+          <span className="font-medium bg-pink-100 text-pink-800 px-1.5 sm:px-2 py-0.5 rounded">
             {gasto.porcentajepersona2}%
           </span>
         </div>
@@ -119,39 +119,41 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <td className="p-4">
+      <td className="p-2 sm:p-4">
         <span
-          className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${obtenerColorMes()}`}
+          className={`inline-flex px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-medium ${obtenerColorMes()}`}
         >
           {gasto.mes}
         </span>
       </td>
-      <td className="p-4">
+      <td className="p-2 sm:p-4">
         <div className="flex flex-col">
-          <span className="font-medium text-gray-800">{gasto.descripcion}</span>
+          <span className="font-medium text-gray-800 text-sm sm:text-base">
+            {gasto.descripcion}
+          </span>
           <span className="text-xs text-gray-500">
             {new Date(gasto.fecha).toLocaleDateString()}
           </span>
         </div>
       </td>
-      <td className="p-4 font-medium text-gray-900">
+      <td className="p-2 sm:p-4 font-medium text-gray-900 text-sm sm:text-base">
         {formatCurrency(gasto.monto)}
       </td>
-      <td className="p-4">
+      <td className="p-2 sm:p-4">
         <span
-          className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${obtenerColorPersona(
+          className={`inline-flex px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-medium ${obtenerColorPersona(
             gasto.personaid
           )}`}
         >
           {email || obtenerNombrePersona(gasto.personaid)}
         </span>
       </td>
-      <td className="p-4">{renderizarInfoCompartido()}</td>
-      <td className="p-4 text-center">
+      <td className="p-2 sm:p-4">{renderizarInfoCompartido()}</td>
+      <td className="p-2 sm:p-4 text-center">
         <button
           onClick={() => eliminarGasto(gasto.id)}
           onKeyDown={handleKeyDown}
-          className={`text-red-500 hover:text-red-700 transition-colors p-2 rounded-full hover:bg-red-50 ${
+          className={`text-red-500 hover:text-red-700 transition-colors p-1.5 sm:p-2 rounded-full hover:bg-red-50 ${
             isHovered ? "animate-pulse" : ""
           }`}
           aria-label="Eliminar gasto"
@@ -159,7 +161,7 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
+            className="h-4 w-4 sm:h-5 sm:w-5"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
