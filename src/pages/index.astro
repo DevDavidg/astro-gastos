@@ -6,14 +6,6 @@ import GastosApp from '../components/GastosApp';
 import HomeRedirect from '../components/auth/HomeRedirect';
 ---
 
-<script>
-	if (sessionStorage.redirectTo) {
-		const redirectTo = sessionStorage.redirectTo;
-		sessionStorage.removeItem('redirectTo');
-		history.replaceState(null, '', redirectTo);
-	}
-</script>
-
 <Layout title="Control de Gastos">
 	<HomeRedirect client:only="react" />
 
