@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
-const BASE_PATH = "/astro-gastos";
-
 export default function NavBar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +36,7 @@ export default function NavBar() {
 
   return (
     <nav className="flex justify-between items-center">
-      <a href={`${BASE_PATH}/`} className="text-2xl font-bold text-blue-600">
+      <a href="/" className="text-2xl font-bold text-blue-600">
         Astro Gastos
       </a>
 
@@ -47,26 +45,23 @@ export default function NavBar() {
           <>
             {user ? (
               <>
-                <a
-                  href={`${BASE_PATH}/`}
-                  className="text-gray-600 hover:text-blue-600"
-                >
+                <a href="/" className="text-gray-600 hover:text-blue-600">
                   Inicio
                 </a>
                 <a
-                  href={`${BASE_PATH}/resumen`}
+                  href="/resumen"
                   className="text-gray-600 hover:text-blue-600"
                 >
                   Resumen
                 </a>
                 <a
-                  href={`${BASE_PATH}/configuracion`}
+                  href="/configuracion"
                   className="text-gray-600 hover:text-blue-600"
                 >
                   Configuración
                 </a>
                 <a
-                  href={`${BASE_PATH}/profile`}
+                  href="/profile"
                   className="text-gray-600 hover:text-blue-600"
                 >
                   Mi Perfil
@@ -74,10 +69,7 @@ export default function NavBar() {
               </>
             ) : (
               <>
-                <a
-                  href={`${BASE_PATH}/auth`}
-                  className="text-gray-600 hover:text-blue-600"
-                >
+                <a href="/auth" className="text-gray-600 hover:text-blue-600">
                   Iniciar sesión
                 </a>
               </>
