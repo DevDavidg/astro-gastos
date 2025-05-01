@@ -5,6 +5,7 @@ import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
   output: "static",
+  base: "/astro-gastos/",
   integrations: [react(), tailwind()],
   build: {
     format: "directory",
