@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AuthContainer from '../components/auth/AuthContainer';
+---
+
+<Layout title="Iniciar sesión | Gastos App">
+  <main class="container mx-auto pt-10">
+    <h1 class="text-3xl font-bold text-center mb-8">Gastos App</h1>
+    <AuthContainer client:load />
+  </main>
+</Layout> 

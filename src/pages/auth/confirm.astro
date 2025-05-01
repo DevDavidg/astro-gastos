@@ -1,0 +1,91 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+---
+
+<Layout title="Verificación de Email | Gastos App">
+  <div class="container mx-auto max-w-md py-12">
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+      <h1 class="text-2xl font-bold mb-4">Verificando tu cuenta...</h1>
+      <div id="loading" class="flex justify-center my-8">
+        <LoadingSpinner size="large" color="primary" client:load />
+      </div>
+      <div id="success" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <p>¡Tu cuenta ha sido verificada con éxito!</p>
+        <p class="mt-2">Serás redirigido automáticamente...</p>
+      </div>
+      <div id="error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <p>Ha ocurrido un error al verificar tu cuenta.</p>
+        <p id="errorMessage" class="mt-2"></p>
+      </div>
+      <div class="mt-6">
+        <a href="/auth" class="text-blue-500 hover:underline">Volver a la página de inicio de sesión</a>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  function getHashParams() {
+    const hash = window.location.hash.substring(1);
+    return hash.split('&').reduce((params, item) => {
+      const [key, value] = item.split('=');
+      if (key && value) params[key] = decodeURIComponent(value);
+      return params;
+    }, {} as Record<string, string>);
+  }
+
+  async function handleEmailConfirmation() {
+    const params = getHashParams();
+    const accessToken = params.access_token;
+    const refreshToken = params.refresh_token;
+    const type = params.type;
+
+    const loadingEl = document.getElementById('loading');
+    const successEl = document.getElementById('success');
+    const errorEl = document.getElementById('error');
+    const errorMessageEl = document.getElementById('errorMessage');
+
+    if (!accessToken || !type) {
+      loadingEl?.classList.add('hidden');
+      errorEl?.classList.remove('hidden');
+      if (errorMessageEl) {
+        errorMessageEl.textContent = 'No se ha encontrado un enlace de verificación válido.';
+      }
+      return;
+    }
+
+    try {
+      if (type === 'signup' || type === 'recovery') {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        loadingEl?.classList.add('hidden');
+        successEl?.classList.remove('hidden');
+
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        throw new Error('Tipo de verificación desconocido');
+      }
+    } catch (error) {
+      console.error('Error during email confirmation:', error);
+      loadingEl?.classList.add('hidden');
+      errorEl?.classList.remove('hidden');
+      if (errorMessageEl) {
+        errorMessageEl.textContent = error instanceof Error ? error.message : 'Error desconocido';
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', handleEmailConfirmation);
+</script> 

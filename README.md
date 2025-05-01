@@ -1,4 +1,75 @@
-# Astro Starter Kit: Basics
+# Astro Gastos
+
+Aplicación web para el seguimiento y gestión de gastos personales construida con Astro y React.
+
+## Características
+
+- 📊 Visualización de gastos en tablas y gráficos
+- 💰 Cálculo automático de totales y estadísticas
+- 💾 Persistencia de datos en localStorage
+- 📱 Diseño responsive para todos los dispositivos
+- 🔄 Actualización reactiva de la interfaz
+
+## Instalación
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/astro-gastos.git
+cd astro-gastos
+
+# Instalar dependencias
+npm install
+
+# Iniciar el servidor de desarrollo
+npm run dev
+```
+
+## Uso
+
+1. Abre la aplicación en `http://localhost:4321`
+2. Agrega tus gastos usando el formulario
+3. Visualiza tus gastos en la tabla principal
+4. Consulta el resumen y gráficos en la página "Resumen"
+5. Configura parámetros adicionales en "Configuración"
+
+## Estructura del Proyecto
+
+```
+astro-gastos/
+├── src/                          # Código fuente
+│   ├── assets/                   # Imágenes y recursos
+│   ├── components/               # Componentes UI reutilizables
+│   │   ├── charts/               # Componentes de gráficos
+│   │   ├── inputs/               # Formularios y campos
+│   │   ├── table/                # Componentes de tablas
+│   │   └── ui/                   # Elementos UI básicos
+│   ├── context/                  # Contexto global de la aplicación
+│   ├── data/                     # Datos iniciales y mocks
+│   ├── hooks/                    # Hooks personalizados
+│   ├── layouts/                  # Plantillas de página
+│   ├── pages/                    # Páginas de la aplicación
+│   ├── styles/                   # Estilos SCSS modulares
+│   ├── types/                    # Definiciones de TypeScript
+│   └── utils/                    # Funciones utilitarias
+├── public/                       # Archivos estáticos
+```
+
+## Tecnologías
+
+- [Astro](https://astro.build/) - Framework web para sitios orientados a contenido
+- [React](https://reactjs.org/) - Biblioteca JavaScript para interfaces de usuario
+- [TypeScript](https://www.typescriptlang.org/) - JavaScript con tipado estático
+- [SCSS](https://sass-lang.com/) - Preprocesador CSS avanzado
+
+## Scripts Disponibles
+
+- `npm run dev` - Inicia el servidor de desarrollo
+- `npm run build` - Compila la aplicación para producción
+- `npm run preview` - Previsualiza la versión de producción
+
+## Licencia
+
+MIT
 
 ```sh
 npm create astro@latest -- --template basics
