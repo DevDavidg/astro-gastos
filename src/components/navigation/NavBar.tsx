@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import type { User } from "@supabase/supabase-js";
+import { BASE_PATH } from "../../lib/constants";
 
 export default function NavBar() {
   const [user, setUser] = useState<User | null>(null);
@@ -36,7 +37,7 @@ export default function NavBar() {
 
   return (
     <nav className="flex justify-between items-center">
-      <a href="/" className="text-2xl font-bold text-blue-600">
+      <a href={`${BASE_PATH}/`} className="text-2xl font-bold text-blue-600">
         Astro Gastos
       </a>
 
@@ -45,23 +46,26 @@ export default function NavBar() {
           <>
             {user ? (
               <>
-                <a href="/" className="text-gray-600 hover:text-blue-600">
+                <a
+                  href={`${BASE_PATH}/`}
+                  className="text-gray-600 hover:text-blue-600"
+                >
                   Inicio
                 </a>
                 <a
-                  href="/resumen"
+                  href={`${BASE_PATH}/resumen`}
                   className="text-gray-600 hover:text-blue-600"
                 >
                   Resumen
                 </a>
                 <a
-                  href="/configuracion"
+                  href={`${BASE_PATH}/configuracion`}
                   className="text-gray-600 hover:text-blue-600"
                 >
                   Configuración
                 </a>
                 <a
-                  href="/profile"
+                  href={`${BASE_PATH}/profile`}
                   className="text-gray-600 hover:text-blue-600"
                 >
                   Mi Perfil
@@ -69,7 +73,10 @@ export default function NavBar() {
               </>
             ) : (
               <>
-                <a href="/auth" className="text-gray-600 hover:text-blue-600">
+                <a
+                  href={`${BASE_PATH}/auth`}
+                  className="text-gray-600 hover:text-blue-600"
+                >
                   Iniciar sesión
                 </a>
               </>
