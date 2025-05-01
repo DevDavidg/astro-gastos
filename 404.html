@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="refresh" content="0; url=/" />
-    <title>Redirigiendo...</title>
+    <meta charset="utf-8" />
+    <title>Redirigiendo…</title>
+    <script>
+      const redirectTo = sessionStorage.redirectTo || location.pathname;
+      location.replace("/astro-gastos/#" + redirectTo);
+    </script>
   </head>
   <body>
-    <p>Redirigiendo a la página principal...</p>
+    <p>Redirigiendo…</p>
   </body>
 </html>
