@@ -1,0 +1,1 @@
+import{r as o}from"./index.BVOCwoKb.js";import{s as r}from"./supabase.4P1wv7wr.js";function i(){const[a,e]=o.useState(!0);return o.useEffect(()=>{(async()=>{try{const{data:{session:t}}=await r.auth.getSession();t||(window.location.href="/auth"),e(!1)}catch(t){console.error("Error checking auth:",t),e(!1)}})()},[]),null}export{i as default};
