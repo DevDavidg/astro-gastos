@@ -1,1 +1,0 @@
-import{G as s}from"./GastosContext.CcSJ84DL.js";import"./jsx-runtime.D_zvdyIk.js";import"./index.BVOCwoKb.js";import"./supabase.4P1wv7wr.js";import"./LoadingSpinner.D7PxHcXC.js";export{s as GastosProvider};
