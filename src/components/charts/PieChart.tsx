@@ -4,17 +4,17 @@ import { calcularTotalPorMes } from "../../utils/calcularTotales";
 import { useGastos } from "../../context/GastosContext";
 import { obtenerColorMes, generarTonoGasto } from "../../utils/colorMeses";
 import { useCurrency } from "../../hooks/useCurrency";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import DetallesGastosModal from "./DetallesGastosModal";
+import { obtenerEmailPersona } from "../../services/gastoService";
 
 const PieChart = () => {
   const { gastos, personas } = useGastos();
   const { currency, formatCurrency } = useCurrency();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const [filtroVista, setFiltroVista] = useState<"mes" | "persona">("mes");
-  const [personaSeleccionada, setPersonaSeleccionada] =
-    useState<string>("todos");
+  const [filtroVista, setFiltroVista] = useState<"mes" | "email">("mes");
+  const [emailSeleccionado, setEmailSeleccionado] = useState<string>("todos");
   const [animProgress, setAnimProgress] = useState(0);
   const [hoveredSlice, setHoveredSlice] = useState<string | null>(null);
   const [previewGasto, setPreviewGasto] = useState<Partial<Gasto> | null>(null);
@@ -25,29 +25,61 @@ const PieChart = () => {
   const [modalData, setModalData] = useState<{
     gastos: Gasto[];
     titulo: string;
+    subtitulo: string;
     total: number;
+    estadisticas: {
+      totalGastos: number;
+      gastosCompartidos: number;
+      gastosNoCompartidos: number;
+      totalCompartido: number;
+      totalNoCompartido: number;
+      porcentajeCompartido: number;
+      porcentajeNoCompartido: number;
+    };
   } | null>(null);
+  const [emailsMap, setEmailsMap] = useState<Record<string, string>>({});
 
-  const calcularGastosPorPersona = useCallback((gastos: Gasto[]) => {
-    return gastos.reduce((acc, gasto) => {
-      if (!gasto.escompartido) {
-        const personaid = gasto.personaid;
-        acc[personaid] = (acc[personaid] || 0) + gasto.monto;
-      } else {
-        if (gasto.porcentajepersona1) {
-          acc["persona1"] =
-            (acc["persona1"] || 0) +
-            (gasto.monto * gasto.porcentajepersona1) / 100;
-        }
-        if (gasto.porcentajepersona2) {
-          acc["persona2"] =
-            (acc["persona2"] || 0) +
-            (gasto.monto * gasto.porcentajepersona2) / 100;
+  // Cargar emails al inicio
+  useEffect(() => {
+    const cargarEmails = async () => {
+      const emailsTemp: Record<string, string> = {};
+      for (const gasto of gastos) {
+        if (!emailsTemp[gasto.personaid]) {
+          const email = await obtenerEmailPersona(gasto.personaid);
+          if (email) emailsTemp[gasto.personaid] = email;
         }
       }
-      return acc;
-    }, {} as Record<string, number>);
-  }, []);
+      setEmailsMap(emailsTemp);
+    };
+    cargarEmails();
+  }, [gastos]);
+
+  const calcularGastosPorEmail = useCallback(
+    (gastos: Gasto[]) => {
+      return gastos.reduce((acc, gasto) => {
+        const email = emailsMap[gasto.personaid] || gasto.personaid;
+
+        if (!gasto.escompartido) {
+          acc[email] = (acc[email] || 0) + gasto.monto;
+        } else {
+          // Email del creador del gasto
+          if (gasto.porcentajepersona1) {
+            acc[email] =
+              (acc[email] || 0) +
+              (gasto.monto * gasto.porcentajepersona1) / 100;
+          }
+          // Email de la otra persona
+          if (gasto.porcentajepersona2 && gasto.otraPersonaEmail) {
+            acc[gasto.otraPersonaEmail] =
+              (acc[gasto.otraPersonaEmail] || 0) +
+              (gasto.monto * gasto.porcentajepersona2) / 100;
+          }
+        }
+        return acc;
+      }, {} as Record<string, number>);
+    },
+    [emailsMap]
+  );
 
   const gastosFiltrados = useCallback(() => {
     const baseGastos = [...gastos];
@@ -62,26 +94,23 @@ const PieChart = () => {
       baseGastos.push(previewGasto as Gasto);
     }
 
-    return personaSeleccionada === "todos"
+    return emailSeleccionado === "todos"
       ? baseGastos
       : baseGastos.filter(
           (gasto) =>
-            gasto.personaid === personaSeleccionada ||
-            (gasto.escompartido &&
-              ((personaSeleccionada === "persona1" &&
-                gasto.porcentajepersona1) ||
-                (personaSeleccionada === "persona2" &&
-                  gasto.porcentajepersona2)))
+            emailsMap[gasto.personaid] === emailSeleccionado ||
+            gasto.personaid === emailSeleccionado ||
+            (gasto.escompartido && gasto.otraPersonaEmail === emailSeleccionado)
         );
-  }, [personaSeleccionada, gastos, previewGasto]);
+  }, [emailSeleccionado, gastos, previewGasto, emailsMap]);
 
   const datosGrafico = useCallback(() => {
     if (filtroVista === "mes") {
       return calcularTotalPorMes(gastosFiltrados());
     } else {
-      return calcularGastosPorPersona(gastosFiltrados());
+      return calcularGastosPorEmail(gastosFiltrados());
     }
-  }, [filtroVista, gastosFiltrados, calcularGastosPorPersona]);
+  }, [filtroVista, gastosFiltrados, calcularGastosPorEmail]);
 
   const calcularPorcentajesGrafico = useCallback(
     (datos: Record<string, number>) => {
@@ -110,14 +139,27 @@ const PieChart = () => {
   );
 
   const obtenerColorPersona = useCallback((personaid: string) => {
-    switch (personaid) {
-      case "persona1":
-        return "#4F46E5"; // Indigo
-      case "persona2":
-        return "#EC4899"; // Pink
-      default:
-        return "#9CA3AF"; // Gray
+    // Generate a consistent color based on the email/persona ID
+    const colors = [
+      "#4F46E5", // Indigo
+      "#EC4899", // Pink
+      "#10B981", // Emerald
+      "#F59E0B", // Amber
+      "#3B82F6", // Blue
+      "#8B5CF6", // Violet
+      "#EF4444", // Red
+      "#14B8A6", // Teal
+      "#F97316", // Orange
+      "#6366F1", // Indigo
+    ];
+
+    // Create a hash of the email/persona ID to get a consistent index
+    let hash = 0;
+    for (let i = 0; i < personaid.length; i++) {
+      hash = personaid.charCodeAt(i) + ((hash << 5) - hash);
     }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
   }, []);
 
   const obtenerColor = (clave: string) => {
@@ -207,34 +249,61 @@ const PieChart = () => {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        if (isHovered && progress === 1) {
-          const textRadius = radius * 0.7;
-          const textX = centerX + offsetX + textRadius * Math.cos(midAngle);
-          const textY = centerY + offsetY + textRadius * Math.sin(midAngle);
-
-          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-          ctx.beginPath();
-          ctx.roundRect(textX - 60, textY - 15, 120, 30, 8);
-          ctx.fill();
-
-          ctx.fillStyle = "#111827";
-          ctx.font = "bold 14px Inter, system-ui, sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(
-            `${
-              filtroVista === "mes" ? clave : obtenerNombrePersona(clave)
-            }: ${porcentaje.toFixed(1)}%`,
-            textX,
-            textY
-          );
-        }
-
         startAngle = endAngle;
       });
     },
-    [porcentajes, hoveredSlice, obtenerColor, filtroVista, obtenerNombrePersona]
+    [porcentajes, hoveredSlice, obtenerColor]
   );
+
+  const HoverModal = ({
+    clave,
+    porcentaje,
+    monto,
+    x,
+    y,
+  }: {
+    clave: string;
+    porcentaje: number;
+    monto: number;
+    x: number;
+    y: number;
+  }) => {
+    const displayText =
+      filtroVista === "mes"
+        ? clave
+        : `${obtenerNombrePersona(clave)} (${clave})`;
+
+    return (
+      <motion.div
+        className="absolute z-50 bg-white rounded-xl shadow-lg border border-gray-100 p-4 min-w-[200px]"
+        style={{
+          left: `${x}px`,
+          top: `${y}px`,
+          transform: "translate(-50%, -100%)",
+        }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center space-x-2">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: obtenerColor(clave) }}
+            />
+            <span className="font-medium text-gray-900 text-sm">
+              {displayText}
+            </span>
+          </div>
+          <div className="text-sm text-gray-600">{formatCurrency(monto)}</div>
+          <div className="text-sm font-semibold text-indigo-600">
+            {porcentaje.toFixed(1)}%
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   const detectarSegmentoHover = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -259,7 +328,7 @@ const PieChart = () => {
       }
 
       let angle = Math.atan2(dy, dx);
-      if (angle < 0) angle += 2 * Math.PI; // Convertir a [0, 2π]
+      if (angle < 0) angle += 2 * Math.PI;
 
       const porcentajesData = porcentajes();
       let startAngle = 0;
@@ -291,6 +360,7 @@ const PieChart = () => {
       return;
     }
 
+    setIsAnimating(true);
     setAnimProgress(0);
     let startTime: number;
     const duration = 800; // duración en ms
@@ -305,6 +375,8 @@ const PieChart = () => {
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
+      } else {
+        setIsAnimating(false);
       }
     };
 
@@ -315,7 +387,7 @@ const PieChart = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [gastos, filtroVista, personaSeleccionada, dibujarGrafico]);
+  }, [gastos, filtroVista, emailSeleccionado, dibujarGrafico]);
 
   useEffect(() => {
     if (previewGasto) {
@@ -382,40 +454,84 @@ const PieChart = () => {
     (clave: string) => {
       let gastosFiltrados: Gasto[] = [];
       let titulo = "";
+      let subtitulo = "";
 
       if (filtroVista === "mes") {
         gastosFiltrados = gastos.filter((g) => g.mes === clave);
         titulo = `Gastos de ${clave}`;
+        subtitulo = `${gastosFiltrados.length} gastos registrados`;
       } else {
-        gastosFiltrados = gastos.filter(
-          (g) =>
-            g.personaid === clave ||
-            (g.escompartido &&
-              ((clave === "persona1" && g.porcentajepersona1) ||
-                (clave === "persona2" && g.porcentajepersona2)))
-        );
-        titulo = `Gastos de ${obtenerNombrePersona(clave)}`;
+        // Filtrar gastos por email
+        gastosFiltrados = gastos.filter((g) => {
+          const emailGasto = emailsMap[g.personaid] || g.personaid;
+          const emailOtraPersona = g.otraPersonaEmail;
+
+          // Incluir gastos donde el email es el creador o el participante
+          return (
+            emailGasto === clave ||
+            (g.escompartido && emailOtraPersona === clave)
+          );
+        });
+
+        const persona = personas.find((p) => emailsMap[p.id] === clave);
+        titulo = `Gastos de ${persona?.nombre || clave}`;
+        subtitulo = clave;
       }
 
       const total = gastosFiltrados.reduce((sum, g) => {
-        if (filtroVista === "persona" && g.escompartido) {
-          if (clave === "persona1") {
-            return sum + (g.monto * (g.porcentajepersona1 || 0)) / 100;
-          } else {
-            return sum + (g.monto * (g.porcentajepersona2 || 0)) / 100;
+        if (filtroVista === "email") {
+          const emailGasto = emailsMap[g.personaid] || g.personaid;
+          if (g.escompartido) {
+            if (emailGasto === clave) {
+              return sum + (g.monto * (g.porcentajepersona1 || 0)) / 100;
+            } else if (g.otraPersonaEmail === clave) {
+              return sum + (g.monto * (g.porcentajepersona2 || 0)) / 100;
+            }
           }
         }
         return sum + g.monto;
       }, 0);
 
+      // Calcular estadísticas adicionales
+      const gastosCompartidos = gastosFiltrados.filter((g) => g.escompartido);
+      const gastosNoCompartidos = gastosFiltrados.filter(
+        (g) => !g.escompartido
+      );
+      const totalCompartido = gastosCompartidos.reduce((sum, g) => {
+        if (filtroVista === "email") {
+          const emailGasto = emailsMap[g.personaid] || g.personaid;
+          if (emailGasto === clave) {
+            return sum + (g.monto * (g.porcentajepersona1 || 0)) / 100;
+          } else if (g.otraPersonaEmail === clave) {
+            return sum + (g.monto * (g.porcentajepersona2 || 0)) / 100;
+          }
+        }
+        return sum + g.monto;
+      }, 0);
+      const totalNoCompartido = gastosNoCompartidos.reduce(
+        (sum, g) => sum + g.monto,
+        0
+      );
+
       setModalData({
         gastos: gastosFiltrados,
         titulo,
+        subtitulo,
         total,
+        estadisticas: {
+          totalGastos: gastosFiltrados.length,
+          gastosCompartidos: gastosCompartidos.length,
+          gastosNoCompartidos: gastosNoCompartidos.length,
+          totalCompartido,
+          totalNoCompartido,
+          porcentajeCompartido: total > 0 ? (totalCompartido / total) * 100 : 0,
+          porcentajeNoCompartido:
+            total > 0 ? (totalNoCompartido / total) * 100 : 0,
+        },
       });
       setIsModalOpen(true);
     },
-    [filtroVista, gastos, obtenerNombrePersona]
+    [filtroVista, gastos, personas, emailsMap]
   );
 
   const detectarSegmentoClick = useCallback(
@@ -458,50 +574,92 @@ const PieChart = () => {
   );
 
   return (
-    <div className="w-full h-full">
+    <motion.div
+      className="w-full h-full"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+        <motion.div
+          className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
           <span className="text-gray-600 text-sm sm:text-base">Ver por:</span>
           <select
             value={filtroVista}
-            onChange={(e) =>
-              setFiltroVista(e.target.value as "mes" | "persona")
-            }
+            onChange={(e) => setFiltroVista(e.target.value as "mes" | "email")}
             className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none text-sm sm:text-base"
           >
             <option value="mes">Mes</option>
-            <option value="persona">Persona</option>
+            <option value="email">Email</option>
           </select>
-        </div>
+        </motion.div>
 
-        <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+        <motion.div
+          className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
           <span className="text-gray-600 text-sm sm:text-base">Filtrar:</span>
-          <select
-            value={personaSeleccionada}
-            onChange={(e) => setPersonaSeleccionada(e.target.value)}
-            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none text-sm sm:text-base"
-          >
-            <option value="todos">Todos</option>
-            {personas.map((persona) => (
-              <option key={persona.id} value={persona.id}>
-                {persona.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+          {filtroVista === "email" && (
+            <select
+              value={emailSeleccionado}
+              onChange={(e) => setEmailSeleccionado(e.target.value)}
+              className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none text-sm sm:text-base"
+            >
+              <option value="todos">Todos</option>
+              {Object.values(emailsMap)
+                .concat(
+                  gastos
+                    .filter((g) => g.escompartido && g.otraPersonaEmail)
+                    .map((g) => g.otraPersonaEmail!)
+                )
+                .filter(
+                  (email, index, self) => email && self.indexOf(email) === index
+                )
+                .sort()
+                .map((email) => (
+                  <option key={email} value={email}>
+                    {email}
+                  </option>
+                ))}
+            </select>
+          )}
+        </motion.div>
       </div>
 
-      <div className="relative bg-white rounded-xl shadow-md p-2 sm:p-4 md:p-6 border border-gray-100">
+      <motion.div
+        className="relative bg-white rounded-xl shadow-md p-2 sm:p-4 md:p-6 border border-gray-100"
+        animate={isAnimating ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <PreviewBadge />
 
         <div className="relative w-full aspect-square max-w-[300px] mx-auto">
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full cursor-pointer"
-            onMouseMove={detectarSegmentoHover}
-            onMouseLeave={() => setHoveredSlice(null)}
-            onClick={detectarSegmentoClick}
-          />
+          <div className="relative w-full h-full flex items-center justify-center">
+            <div className="relative w-[300px] h-[300px]">
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 w-full h-full cursor-pointer"
+                onMouseMove={detectarSegmentoHover}
+                onMouseLeave={() => setHoveredSlice(null)}
+                onClick={detectarSegmentoClick}
+              />
+              <AnimatePresence>
+                {hoveredSlice && (
+                  <HoverModal
+                    clave={hoveredSlice}
+                    porcentaje={porcentajes()[hoveredSlice]}
+                    monto={datosGrafico()[hoveredSlice]}
+                    x={150}
+                    y={150}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
@@ -509,11 +667,10 @@ const PieChart = () => {
             const isPreviewCategory =
               previewGasto &&
               ((filtroVista === "mes" && previewGasto.mes === clave) ||
-                (filtroVista === "persona" &&
-                  previewGasto.personaid === clave));
+                (filtroVista === "email" && previewGasto.personaid === clave));
 
             return (
-              <div
+              <motion.div
                 key={clave}
                 className={`flex items-center p-2 sm:p-3 rounded-lg transition-colors ${
                   hoveredSlice === clave
@@ -524,6 +681,13 @@ const PieChart = () => {
                 }`}
                 onMouseEnter={() => setHoveredSlice(clave)}
                 onMouseLeave={() => setHoveredSlice(null)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (filtroVista === "mes") {
+                    setSelectedMonth(clave);
+                  }
+                }}
               >
                 <span
                   className="w-4 h-4 sm:w-5 sm:h-5 rounded-md inline-block mr-2 sm:mr-3 shadow-sm"
@@ -544,22 +708,159 @@ const PieChart = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
-      {modalData && (
-        <DetallesGastosModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          gastos={modalData.gastos}
-          titulo={modalData.titulo}
-          total={modalData.total}
-        />
-      )}
-    </div>
+      <AnimatePresence>
+        {modalData && isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-500 to-purple-500" />
+
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {modalData.titulo}
+                    </h2>
+                    <p className="text-gray-500">{modalData.subtitulo}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setModalData(null);
+                    }}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Cerrar modal"
+                  >
+                    <svg
+                      className="w-6 h-6 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Resumen
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Gastos</span>
+                        <span className="font-medium">
+                          {modalData.estadisticas.totalGastos}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Monto</span>
+                        <span className="font-medium">
+                          {formatCurrency(modalData.total)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Distribución
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">
+                          Gastos Compartidos
+                        </span>
+                        <span className="font-medium">
+                          {modalData.estadisticas.gastosCompartidos}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">
+                          Gastos Individuales
+                        </span>
+                        <span className="font-medium">
+                          {modalData.estadisticas.gastosNoCompartidos}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-auto max-h-[50vh]">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Descripción
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Monto
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tipo
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {modalData.gastos.map((gasto) => (
+                        <tr key={gasto.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {gasto.descripcion}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatCurrency(gasto.monto)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {gasto.escompartido ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                Compartido
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Individual
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {gasto.mes}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

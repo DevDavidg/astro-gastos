@@ -5,6 +5,7 @@ const NavBar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState("/");
+  const [showNavbar, setShowNavbar] = useState(true);
   const basePath = import.meta.env.BASE_URL || "";
 
   useEffect(() => {
@@ -17,8 +18,16 @@ const NavBar: React.FC = () => {
       setIsScrolled(scrollPosition > 20);
     };
 
-    // Set initial path
-    setCurrentPath(window.location.pathname);
+    // Set initial path and check if we're on an auth page
+    const path = window.location.pathname;
+    setCurrentPath(path);
+
+    // Check if we're on an auth page
+    const isAuthPage =
+      path.includes("/auth") ||
+      path.includes("/login") ||
+      path.includes("/register");
+    setShowNavbar(!isAuthPage);
 
     // Add multiple scroll listeners
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -41,6 +50,11 @@ const NavBar: React.FC = () => {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
     return `${base}${cleanPath}`;
   };
+
+  // Si no debemos mostrar el navbar, retornamos null
+  if (!showNavbar) {
+    return null;
+  }
 
   return (
     <motion.nav

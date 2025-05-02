@@ -1,21 +1,25 @@
 import React from "react";
+import { GastosProvider } from "../context/GastosContext";
 import TableGastos from "./table/TableGastos";
 import PieChart from "./charts/PieChart";
-import { GastosProvider } from "../context/GastosContext";
+import FutureExpensesList from "./future-expenses/FutureExpensesList";
 
-interface GastosAppProps {
-  showTable?: boolean;
-  showChart?: boolean;
-}
-
-const GastosApp: React.FC<GastosAppProps> = ({
-  showTable = true,
-  showChart = true,
-}) => {
+const GastosApp: React.FC = () => {
   return (
     <GastosProvider>
-      {showTable && <TableGastos />}
-      {showChart && <PieChart />}
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <TableGastos />
+            <div className="mt-8">
+              <FutureExpensesList />
+            </div>
+          </div>
+          <div>
+            <PieChart />
+          </div>
+        </div>
+      </div>
     </GastosProvider>
   );
 };

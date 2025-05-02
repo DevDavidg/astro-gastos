@@ -1,30 +1,32 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import AddRowForm from '../components/inputs/AddRowForm.astro';
-import Card from '../components/ui/Card.astro';
-import GastosApp from '../components/GastosApp';
-import HomeRedirect from '../components/auth/HomeRedirect';
+import HomeRedirect from '../components/auth/HomeRedirect.tsx';
+import GastosApp from '../components/GastosApp.tsx';
+import { AddGastoFormWrapper } from '../components/inputs/AddGastoFormWrapper';
+import { GastosProvider } from '../context/GastosContext';
 ---
 
-<Layout title="Control de Gastos">
-	<HomeRedirect client:only="react" />
-
-	<h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 md:mb-8">Expense Tracker</h1>
-
-	<Card className="mb-4 sm:mb-6 md:mb-8">
-		<AddRowForm />
-	</Card>
-
-	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-		<div class="lg:col-span-2">
-			<GastosApp client:load showChart={false} />
+<Layout title="Expense Tracker">
+	<main class="container mx-auto px-4 py-8">
+		<HomeRedirect client:only="react" />
+		<h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 md:mb-8">
+			Expense Tracker
+		</h1>
+		<div class="grid grid-cols-1 gap-8">
+			<div class="bg-white rounded-lg shadow-md p-6">
+			<div class="w-full">
+				<GastosProvider client:only="react">
+					<AddGastoFormWrapper client:load />
+				</GastosProvider>
+			</div>
 		</div>
-		<div>
-			<Card>
-				<GastosApp client:load showTable={false} />
-			</Card>
+			<div class="bg-white rounded-lg shadow-md p-6">
+			<div class="w-full">
+				<GastosApp client:load />
+				</div>
+			</div>
 		</div>
-	</div>
+	</main>
 </Layout>
 
 <script>
