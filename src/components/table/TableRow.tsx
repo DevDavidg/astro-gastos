@@ -20,9 +20,7 @@ const TableRow = ({ gasto, onDelete, currencyCode }: TableRowProps) => {
 
   useEffect(() => {
     const fetchEmail = async () => {
-      console.log("Fetching email for gasto:", gasto);
       const personaEmail = await obtenerEmailPersona(gasto.personaid);
-      console.log("Email fetched:", personaEmail);
       setEmail(personaEmail);
     };
     fetchEmail();

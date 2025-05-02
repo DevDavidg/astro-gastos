@@ -67,7 +67,6 @@ const BarChart = () => {
 
     const handleGastoEliminado = (e: Event) => {
       const customEvent = e as CustomEvent;
-      console.log("Gasto eliminado:", customEvent.detail);
       setPreviewGasto(null);
       dibujarGrafico();
     };

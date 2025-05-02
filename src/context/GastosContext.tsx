@@ -139,9 +139,6 @@ export function GastosProvider({ children }: { children: ReactNode }) {
     try {
       const { otraPersonaEmail, ...gastoData } = gasto;
 
-      console.log("Creando nuevo gasto:", gastoData);
-      console.log("Email de la otra persona:", otraPersonaEmail);
-
       const nuevoGasto = await crearGasto({
         ...gastoData,
         personaid: gastoData.personaid,
@@ -152,8 +149,6 @@ export function GastosProvider({ children }: { children: ReactNode }) {
         usuarioid: user.id,
         otraPersonaEmail: otraPersonaEmail,
       });
-
-      console.log("Gasto creado:", nuevoGasto);
 
       // Solo recargar datos una vez
       await recargarDatos();
@@ -177,22 +172,15 @@ export function GastosProvider({ children }: { children: ReactNode }) {
             .eq("email", otraPersonaEmail)
             .maybeSingle();
 
-          console.log("Búsqueda en personas:", personaDestino, personaError);
-
           if (!personaDestino) {
             // Si no está en la tabla personas, intentar usar RPC para buscar en auth.users
-            console.log("Buscando usuario con email:", otraPersonaEmail);
 
             const { data: authUser, error: authError } = await supabase.rpc(
               "get_user_id_by_email",
               { email_input: otraPersonaEmail }
             );
 
-            console.log("Resultado de búsqueda RPC:", authUser);
-            console.log("Error de búsqueda RPC:", authError);
-
             if (authUser && authUser.length > 0) {
-              console.log("Usuario encontrado con ID:", authUser[0].id);
               // Crear notificación directa
               const { error: notificationError } = await supabase
                 .from("notifications")
@@ -208,16 +196,11 @@ export function GastosProvider({ children }: { children: ReactNode }) {
                   notificationError
                 );
               } else {
-                console.log(
-                  "Notificación creada exitosamente para usuario auth"
-                );
               }
             } else {
-              console.log("No se encontró usuario en auth con ese email");
             }
           } else {
             // Usuario existe en personas, crear notificación normal
-            console.log("Usuario encontrado en personas:", personaDestino);
             const { error: notificationError } = await supabase
               .from("notifications")
               .insert({
@@ -229,9 +212,6 @@ export function GastosProvider({ children }: { children: ReactNode }) {
             if (notificationError) {
               console.error("Error al crear notificación:", notificationError);
             } else {
-              console.log(
-                "Notificación creada exitosamente para usuario en personas"
-              );
             }
           }
         } catch (error) {

@@ -4,6 +4,8 @@ import { calcularTotalPorMes } from "../../utils/calcularTotales";
 import { useGastos } from "../../context/GastosContext";
 import { obtenerColorMes, generarTonoGasto } from "../../utils/colorMeses";
 import { useCurrency } from "../../hooks/useCurrency";
+import { motion } from "framer-motion";
+import DetallesGastosModal from "./DetallesGastosModal";
 
 const PieChart = () => {
   const { gastos, personas } = useGastos();
@@ -16,7 +18,15 @@ const PieChart = () => {
   const [animProgress, setAnimProgress] = useState(0);
   const [hoveredSlice, setHoveredSlice] = useState<string | null>(null);
   const [previewGasto, setPreviewGasto] = useState<Partial<Gasto> | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const prevGastosLengthRef = useRef<number>(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<{
+    gastos: Gasto[];
+    titulo: string;
+    total: number;
+  } | null>(null);
 
   const calcularGastosPorPersona = useCallback((gastos: Gasto[]) => {
     return gastos.reduce((acc, gasto) => {
@@ -106,7 +116,7 @@ const PieChart = () => {
       case "persona2":
         return "#EC4899"; // Pink
       default:
-        return "#9CA3AF"; // Gris
+        return "#9CA3AF"; // Gray
     }
   }, []);
 
@@ -119,7 +129,8 @@ const PieChart = () => {
       );
       return generarTonoGasto(colorBase, index, gastosDelMes.length);
     } else {
-      return "#6B7280";
+      // Return a valid hex color for persona view
+      return obtenerColorPersona(clave);
     }
   };
 
@@ -163,45 +174,16 @@ const PieChart = () => {
         return;
       }
 
-      ctx.save();
-      ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 4;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
       let startAngle = 0;
-      let mouseX = 0;
-      let mouseY = 0;
-
-      if (hoveredSlice) {
-        const canvasRect = canvas.getBoundingClientRect();
-        mouseX = canvasRect.width / 2;
-        mouseY = canvasRect.height / 2;
-      }
 
       Object.entries(porcentajesData).forEach(([clave, porcentaje]) => {
         const animatedPercentage = porcentaje * progress;
         const endAngle =
           startAngle + (animatedPercentage / 100) * (Math.PI * 2);
-
         const midAngle = startAngle + (endAngle - startAngle) / 2;
 
         const isHovered = hoveredSlice === clave;
-
-        let explodeFactor = isHovered ? 15 : 0;
-
-        if (previewGasto && previewGasto.monto && previewGasto.monto > 0) {
-          if (
-            (filtroVista === "mes" && previewGasto.mes === clave) ||
-            (filtroVista === "persona" && previewGasto.personaid === clave)
-          ) {
-            explodeFactor = Math.max(explodeFactor, 10);
-          }
-        }
+        const explodeFactor = isHovered ? 10 : 0;
 
         const offsetX = explodeFactor * Math.cos(midAngle);
         const offsetY = explodeFactor * Math.sin(midAngle);
@@ -230,7 +212,7 @@ const PieChart = () => {
           const textX = centerX + offsetX + textRadius * Math.cos(midAngle);
           const textY = centerY + offsetY + textRadius * Math.sin(midAngle);
 
-          ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
           ctx.beginPath();
           ctx.roundRect(textX - 60, textY - 15, 120, 30, 8);
           ctx.fill();
@@ -251,14 +233,7 @@ const PieChart = () => {
         startAngle = endAngle;
       });
     },
-    [
-      porcentajes,
-      hoveredSlice,
-      obtenerColor,
-      filtroVista,
-      obtenerNombrePersona,
-      previewGasto,
-    ]
+    [porcentajes, hoveredSlice, obtenerColor, filtroVista, obtenerNombrePersona]
   );
 
   const detectarSegmentoHover = useCallback(
@@ -359,7 +334,6 @@ const PieChart = () => {
 
     const handleGastoEliminado = (e: Event) => {
       const customEvent = e as CustomEvent;
-      console.log("Gasto eliminado:", customEvent.detail);
       setAnimProgress(0);
       setPreviewGasto(null);
       dibujarGrafico(1);
@@ -404,29 +378,108 @@ const PieChart = () => {
     return { backgroundColor: color };
   };
 
+  const handleSliceClick = useCallback(
+    (clave: string) => {
+      let gastosFiltrados: Gasto[] = [];
+      let titulo = "";
+
+      if (filtroVista === "mes") {
+        gastosFiltrados = gastos.filter((g) => g.mes === clave);
+        titulo = `Gastos de ${clave}`;
+      } else {
+        gastosFiltrados = gastos.filter(
+          (g) =>
+            g.personaid === clave ||
+            (g.escompartido &&
+              ((clave === "persona1" && g.porcentajepersona1) ||
+                (clave === "persona2" && g.porcentajepersona2)))
+        );
+        titulo = `Gastos de ${obtenerNombrePersona(clave)}`;
+      }
+
+      const total = gastosFiltrados.reduce((sum, g) => {
+        if (filtroVista === "persona" && g.escompartido) {
+          if (clave === "persona1") {
+            return sum + (g.monto * (g.porcentajepersona1 || 0)) / 100;
+          } else {
+            return sum + (g.monto * (g.porcentajepersona2 || 0)) / 100;
+          }
+        }
+        return sum + g.monto;
+      }, 0);
+
+      setModalData({
+        gastos: gastosFiltrados,
+        titulo,
+        total,
+      });
+      setIsModalOpen(true);
+    },
+    [filtroVista, gastos, obtenerNombrePersona]
+  );
+
+  const detectarSegmentoClick = useCallback(
+    (event: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!canvasRef.current) return;
+
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const radius = Math.min(centerX, centerY) - 20;
+
+      const dx = x - centerX;
+      const dy = y - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > radius) return;
+
+      let angle = Math.atan2(dy, dx);
+      if (angle < 0) angle += 2 * Math.PI;
+
+      const porcentajesData = porcentajes();
+      let startAngle = 0;
+
+      for (const [clave, porcentaje] of Object.entries(porcentajesData)) {
+        const endAngle = startAngle + (porcentaje / 100) * (Math.PI * 2);
+
+        if (angle >= startAngle && angle < endAngle) {
+          handleSliceClick(clave);
+          return;
+        }
+
+        startAngle = endAngle;
+      }
+    },
+    [porcentajes, handleSliceClick]
+  );
+
   return (
     <div className="w-full h-full">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+        <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
           <span className="text-gray-600 text-sm sm:text-base">Ver por:</span>
           <select
             value={filtroVista}
             onChange={(e) =>
               setFiltroVista(e.target.value as "mes" | "persona")
             }
-            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all text-sm sm:text-base"
+            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none text-sm sm:text-base"
           >
             <option value="mes">Mes</option>
             <option value="persona">Persona</option>
           </select>
         </div>
 
-        <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+        <div className="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
           <span className="text-gray-600 text-sm sm:text-base">Filtrar:</span>
           <select
             value={personaSeleccionada}
             onChange={(e) => setPersonaSeleccionada(e.target.value)}
-            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all text-sm sm:text-base"
+            className="p-1.5 sm:p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none text-sm sm:text-base"
           >
             <option value="todos">Todos</option>
             {personas.map((persona) => (
@@ -438,7 +491,7 @@ const PieChart = () => {
         </div>
       </div>
 
-      <div className="relative bg-white rounded-xl shadow-md p-2 sm:p-4 md:p-6 border border-gray-100 transition-all hover:shadow-lg">
+      <div className="relative bg-white rounded-xl shadow-md p-2 sm:p-4 md:p-6 border border-gray-100">
         <PreviewBadge />
 
         <div className="relative w-full aspect-square max-w-[300px] mx-auto">
@@ -447,6 +500,7 @@ const PieChart = () => {
             className="absolute inset-0 w-full h-full cursor-pointer"
             onMouseMove={detectarSegmentoHover}
             onMouseLeave={() => setHoveredSlice(null)}
+            onClick={detectarSegmentoClick}
           />
         </div>
 
@@ -461,9 +515,9 @@ const PieChart = () => {
             return (
               <div
                 key={clave}
-                className={`flex items-center p-2 sm:p-3 rounded-lg transition-all ${
+                className={`flex items-center p-2 sm:p-3 rounded-lg transition-colors ${
                   hoveredSlice === clave
-                    ? "bg-gray-100 scale-105"
+                    ? "bg-gray-100"
                     : isPreviewCategory
                     ? "bg-indigo-50 border border-indigo-100"
                     : "hover:bg-gray-50"
@@ -495,6 +549,16 @@ const PieChart = () => {
           })}
         </div>
       </div>
+
+      {modalData && (
+        <DetallesGastosModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          gastos={modalData.gastos}
+          titulo={modalData.titulo}
+          total={modalData.total}
+        />
+      )}
     </div>
   );
 };

@@ -30,9 +30,6 @@ export const NotificationsList = () => {
         return;
       }
 
-      console.log("Current user ID:", user.id);
-      console.log("Current user email:", user.email);
-
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -42,7 +39,6 @@ export const NotificationsList = () => {
       if (error) {
         console.error("Error loading notifications:", error);
       } else {
-        console.log("Notifications found:", data);
         setNotifications(data || []);
       }
     } catch (error) {

@@ -173,8 +173,6 @@ export const AddGastoForm: React.FC = () => {
       otraPersonaEmail: isShared ? otraPersonaEmail : undefined,
     };
 
-    console.log("Nuevo gasto:", gasto);
-
     try {
       await agregarGasto(gasto);
       if (formRef.current) {
