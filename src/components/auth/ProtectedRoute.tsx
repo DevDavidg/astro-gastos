@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  redirectTo?: string;
+  readonly children: React.ReactNode;
+  readonly redirectTo?: string;
 }
 
-export default function ProtectedRoute({
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   redirectTo = "/auth",
-}: ProtectedRouteProps) {
+}) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -30,4 +30,4 @@ export default function ProtectedRoute({
     return <>{children}</>;
   }
   return null;
-}
+};

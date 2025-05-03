@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 import type { ReactNode } from "react";
 import type { Gasto, Persona } from "../types/gasto";
 import type { UserPreferences } from "../types/userPreferences";
@@ -6,7 +12,6 @@ import { supabase } from "../lib/supabase";
 import {
   obtenerGastos,
   obtenerPersonas,
-  crearGasto,
   eliminarGasto as eliminarGastoApi,
   actualizarSueldoPersona as actualizarSueldoPersonaApi,
   actualizarNombrePersona as actualizarNombrePersonaApi,
@@ -17,17 +22,17 @@ import {
 } from "../services/localStoragePreferences";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 
+type GastoInput = Omit<
+  Gasto,
+  "id" | "fecha" | "usuarioid" | "fechaCreacion" | "fechaActualizacion"
+> & { otraPersonaEmail?: string };
+
 interface GastosContextType {
   gastos: Gasto[];
   personas: Persona[];
   isLoading: boolean;
   userPreferences: UserPreferences | null;
-  agregarGasto: (
-    gasto: Omit<
-      Gasto,
-      "id" | "fecha" | "usuarioid" | "fechaCreacion" | "fechaActualizacion"
-    > & { otraPersonaEmail?: string }
-  ) => Promise<void>;
+  agregarGasto: (gasto: GastoInput) => Promise<void>;
   eliminarGasto: (id: string) => Promise<void>;
   actualizarSueldoPersona: (personaId: string, monto: number) => Promise<void>;
   actualizarNombrePersona: (personaId: string, nombre: string) => Promise<void>;
@@ -44,7 +49,9 @@ interface GastosContextType {
 
 const GastosContext = createContext<GastosContextType | undefined>(undefined);
 
-export function GastosProvider({ children }: { children: ReactNode }) {
+export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
+  children,
+}) => {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,34 +133,72 @@ export function GastosProvider({ children }: { children: ReactNode }) {
     await cargarDatos();
   };
 
-  const agregarGasto = async (
-    gasto: Omit<
+  const enviarNotificacion = async (
+    userId: string,
+    personaPrincipal: Persona,
+    gastoData: Omit<
       Gasto,
       "id" | "fecha" | "usuarioid" | "fechaCreacion" | "fechaActualizacion"
-    > & { otraPersonaEmail?: string }
+    >
   ) => {
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: userId,
+        title: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
+        message: `${gastoData.descripcion} - Monto: ${gastoData.monto} - Tu porcentaje: ${gastoData.porcentajepersona2}%`,
+      });
+
+    if (notificationError) {
+      console.error("Error al crear notificación:", notificationError);
+    }
+  };
+
+  const procesarNotificacion = async (
+    otraPersonaEmail: string,
+    personaPrincipal: Persona,
+    gastoData: Omit<
+      Gasto,
+      "id" | "fecha" | "usuarioid" | "fechaCreacion" | "fechaActualizacion"
+    >
+  ) => {
+    try {
+      const { data: personaDestino } = await supabase
+        .from("personas")
+        .select("usuarioid, email")
+        .eq("email", otraPersonaEmail)
+        .maybeSingle();
+
+      if (personaDestino) {
+        await enviarNotificacion(
+          personaDestino.usuarioid,
+          personaPrincipal,
+          gastoData
+        );
+        return;
+      }
+
+      const { data: authUser } = await supabase.rpc("get_user_id_by_email", {
+        email_input: otraPersonaEmail,
+      });
+
+      if (authUser?.[0]?.id) {
+        await enviarNotificacion(authUser[0].id, personaPrincipal, gastoData);
+      }
+    } catch (error) {
+      console.error("Error al procesar notificación:", error);
+    }
+  };
+
+  const agregarGasto = async (gasto: GastoInput) => {
     if (!user) {
       throw new Error("Usuario no autenticado");
     }
 
     try {
       const { otraPersonaEmail, ...gastoData } = gasto;
-
-      const nuevoGasto = await crearGasto({
-        ...gastoData,
-        personaid: gastoData.personaid,
-        escompartido: gastoData.escompartido,
-        porcentajepersona1: gastoData.porcentajepersona1,
-        porcentajepersona2: gastoData.porcentajepersona2,
-        fecha: new Date(),
-        usuarioid: user.id,
-        otraPersonaEmail: otraPersonaEmail,
-      });
-
-      // Solo recargar datos una vez
       await recargarDatos();
 
-      // Lógica de notificaciones
       if (gastoData.escompartido && otraPersonaEmail) {
         const personaPrincipal = personas.find(
           (p) => p.id === gastoData.personaid
@@ -164,59 +209,11 @@ export function GastosProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        try {
-          // Primero, intentar buscar una persona con este email
-          const { data: personaDestino, error: personaError } = await supabase
-            .from("personas")
-            .select("usuarioid, email")
-            .eq("email", otraPersonaEmail)
-            .maybeSingle();
-
-          if (!personaDestino) {
-            // Si no está en la tabla personas, intentar usar RPC para buscar en auth.users
-
-            const { data: authUser, error: authError } = await supabase.rpc(
-              "get_user_id_by_email",
-              { email_input: otraPersonaEmail }
-            );
-
-            if (authUser && authUser.length > 0) {
-              // Crear notificación directa
-              const { error: notificationError } = await supabase
-                .from("notifications")
-                .insert({
-                  user_id: authUser[0].id,
-                  title: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
-                  message: `${gastoData.descripcion} - Monto: ${gastoData.monto} - Tu porcentaje: ${gastoData.porcentajepersona2}%`,
-                });
-
-              if (notificationError) {
-                console.error(
-                  "Error al crear notificación:",
-                  notificationError
-                );
-              } else {
-              }
-            } else {
-            }
-          } else {
-            // Usuario existe en personas, crear notificación normal
-            const { error: notificationError } = await supabase
-              .from("notifications")
-              .insert({
-                user_id: personaDestino.usuarioid,
-                title: `Nuevo gasto compartido de ${personaPrincipal.nombre}`,
-                message: `${gastoData.descripcion} - Monto: ${gastoData.monto} - Tu porcentaje: ${gastoData.porcentajepersona2}%`,
-              });
-
-            if (notificationError) {
-              console.error("Error al crear notificación:", notificationError);
-            } else {
-            }
-          }
-        } catch (error) {
-          console.error("Error al procesar notificación:", error);
-        }
+        await procesarNotificacion(
+          otraPersonaEmail,
+          personaPrincipal,
+          gastoData
+        );
       }
     } catch (error) {
       console.error("Error al agregar gasto:", error);
@@ -226,20 +223,16 @@ export function GastosProvider({ children }: { children: ReactNode }) {
 
   const eliminarGasto = async (id: string) => {
     try {
-      // Actualizar el estado local inmediatamente para una respuesta más rápida
       setGastos((prevGastos) => {
         const newGastos = prevGastos.filter((g) => g.id !== id);
-        // Disparar evento después de actualizar el estado
         window.dispatchEvent(
           new CustomEvent("gastoEliminado", { detail: { id } })
         );
         return newGastos;
       });
 
-      // Eliminar el gasto en segundo plano
       eliminarGastoApi(id).catch((error) => {
         console.error("Error al eliminar el gasto:", error);
-        // Si hay un error, recargamos los datos para mantener la sincronización
         recargarDatos();
       });
     } catch (error) {
@@ -285,7 +278,7 @@ export function GastosProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const updatedPreferences = await updateUserPreferences(preferences);
+      const updatedPreferences = updateUserPreferences(preferences);
 
       if (updatedPreferences) {
         setUserPreferences(updatedPreferences);
@@ -334,20 +327,36 @@ export function GastosProvider({ children }: { children: ReactNode }) {
     return { porcentajePersona1, porcentajePersona2 };
   };
 
-  const value = {
-    gastos,
-    personas,
-    isLoading,
-    userPreferences,
-    agregarGasto,
-    eliminarGasto,
-    actualizarSueldoPersona,
-    actualizarNombrePersona,
-    obtenerTotalGastosPorPersona,
-    calcularPorcentajeGasto,
-    recargarDatos,
-    updateUserPreferences: handleUpdateUserPreferences,
-  };
+  const value = useMemo(
+    () => ({
+      gastos,
+      personas,
+      isLoading,
+      userPreferences,
+      agregarGasto,
+      eliminarGasto,
+      actualizarSueldoPersona,
+      actualizarNombrePersona,
+      obtenerTotalGastosPorPersona,
+      calcularPorcentajeGasto,
+      recargarDatos,
+      updateUserPreferences: handleUpdateUserPreferences,
+    }),
+    [
+      gastos,
+      personas,
+      isLoading,
+      userPreferences,
+      agregarGasto,
+      eliminarGasto,
+      actualizarSueldoPersona,
+      actualizarNombrePersona,
+      obtenerTotalGastosPorPersona,
+      calcularPorcentajeGasto,
+      recargarDatos,
+      handleUpdateUserPreferences,
+    ]
+  );
 
   if (!isInitialized) {
     return (
@@ -360,7 +369,7 @@ export function GastosProvider({ children }: { children: ReactNode }) {
   return (
     <GastosContext.Provider value={value}>{children}</GastosContext.Provider>
   );
-}
+};
 
 export function useGastos() {
   const context = useContext(GastosContext);

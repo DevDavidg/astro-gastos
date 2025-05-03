@@ -14,7 +14,6 @@ const BarChart = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [previewGasto, setPreviewGasto] = useState<Partial<Gasto> | null>(null);
   const [hoveredBar, setHoveredBar] = useState<string | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
   const animationRef = useRef<number | null>(null);
   const prevGastosLengthRef = useRef<number>(0);
 
@@ -22,10 +21,9 @@ const BarChart = () => {
     const baseGastos = [...gastos];
 
     if (
-      previewGasto &&
-      previewGasto.monto &&
-      previewGasto.monto > 0 &&
-      previewGasto.mes
+      previewGasto?.monto !== undefined &&
+      previewGasto?.monto > 0 &&
+      previewGasto?.mes
     ) {
       baseGastos.push(previewGasto as Gasto);
     }
@@ -186,7 +184,6 @@ const BarChart = () => {
       return;
     }
 
-    setIsAnimating(true);
     let startTime: number;
     const duration = 800;
 
@@ -199,8 +196,6 @@ const BarChart = () => {
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
-      } else {
-        setIsAnimating(false);
       }
     };
 
@@ -221,8 +216,7 @@ const BarChart = () => {
       dibujarGrafico(1);
     };
 
-    const handleGastoEliminado = (e: Event) => {
-      const customEvent = e as CustomEvent;
+    const handleGastoEliminado = () => {
       setPreviewGasto(null);
       dibujarGrafico(1);
     };
@@ -250,7 +244,6 @@ const BarChart = () => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
 
     const padding = {
       left: 70,
@@ -272,6 +265,19 @@ const BarChart = () => {
     } else {
       setHoveredBar(null);
     }
+  };
+
+  const getBackgroundClass = (
+    isPreviewCategory: boolean | null,
+    isHovered: boolean | null
+  ) => {
+    if (isPreviewCategory) {
+      return "bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800";
+    }
+    if (isHovered) {
+      return "bg-gray-100 dark:bg-gray-700";
+    }
+    return "bg-gray-50 dark:bg-gray-800/50";
   };
 
   return (
@@ -313,13 +319,10 @@ const BarChart = () => {
             return (
               <motion.div
                 key={mes}
-                className={`flex items-center justify-between p-3 rounded-lg transition-all ${
-                  isPreviewCategory
-                    ? "bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800"
-                    : isHovered
-                    ? "bg-gray-100 dark:bg-gray-700"
-                    : "bg-gray-50 dark:bg-gray-800/50"
-                }`}
+                className={`flex items-center justify-between p-3 rounded-lg transition-all ${getBackgroundClass(
+                  isPreviewCategory,
+                  isHovered
+                )}`}
                 onMouseEnter={() => setHoveredBar(mes)}
                 onMouseLeave={() => setHoveredBar(null)}
                 whileHover={{ scale: 1.02 }}

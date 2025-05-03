@@ -3,7 +3,6 @@ import { UserPreferencesForm } from "../preferences/UserPreferencesForm";
 import { PersonaForm } from "./PersonaForm";
 import { GastosProvider } from "../../context/GastosContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "../../hooks/useTheme";
 
 const ConfigTabs = {
   PREFERENCES: "preferences",
@@ -16,7 +15,6 @@ type ConfigTab = (typeof ConfigTabs)[keyof typeof ConfigTabs];
 
 export const ConfigPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ConfigTab>(ConfigTabs.PREFERENCES);
-  const { isDarkMode } = useTheme();
 
   const tabs = [
     {
@@ -158,29 +156,41 @@ export const ConfigPage: React.FC = () => {
                 </h4>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label
+                      htmlFor="current-password"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
                       Contraseña actual
                     </label>
                     <input
                       type="password"
+                      id="current-password"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label
+                      htmlFor="new-password"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
                       Nueva contraseña
                     </label>
                     <input
                       type="password"
+                      id="new-password"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label
+                      htmlFor="confirm-password"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
                       Confirmar nueva contraseña
                     </label>
                     <input
                       type="password"
+                      id="confirm-password"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                     />
                   </div>

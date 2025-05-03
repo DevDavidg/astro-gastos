@@ -18,22 +18,18 @@ const NavBar: React.FC = () => {
       setIsScrolled(scrollPosition > 20);
     };
 
-    // Set initial path and check if we're on an auth page
     const path = window.location.pathname;
     setCurrentPath(path);
 
-    // Check if we're on an auth page
     const isAuthPage =
       path.includes("/auth") ||
       path.includes("/login") ||
       path.includes("/register");
     setShowNavbar(!isAuthPage);
 
-    // Add multiple scroll listeners
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("wheel", handleScroll, { passive: true });
 
-    // Check initial scroll position
     handleScroll();
 
     return () => {
@@ -44,14 +40,12 @@ const NavBar: React.FC = () => {
 
   const isActive = (path: string) => currentPath === path;
 
-  // Función para construir la URL correctamente
   const buildUrl = (path: string) => {
     const base = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
     return `${base}${cleanPath}`;
   };
 
-  // Si no debemos mostrar el navbar, retornamos null
   if (!showNavbar) {
     return null;
   }
@@ -67,7 +61,6 @@ const NavBar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -95,7 +88,6 @@ const NavBar: React.FC = () => {
             </a>
           </motion.div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <a
               href={buildUrl("/")}
@@ -163,7 +155,6 @@ const NavBar: React.FC = () => {
             </a>
           </div>
 
-          {/* Mobile Menu Button */}
           <motion.button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:ring-offset-transparent"
@@ -218,7 +209,6 @@ const NavBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div

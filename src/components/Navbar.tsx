@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useGastos } from "../context/GastosContext";
 import { useCurrency } from "../hooks/useCurrency";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -9,10 +8,8 @@ const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const { currency, setCurrency } = useCurrency();
-  const { personas } = useGastos();
   const location = useLocation();
 
-  // Efecto para manejar el scroll
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
@@ -22,7 +19,6 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Efecto para cerrar el menú al cambiar el tamaño de la pantalla
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -35,7 +31,6 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Efecto para cerrar el menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isOpen && !(event.target as HTMLElement).closest(".navbar-content")) {
@@ -66,7 +61,6 @@ const Navbar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 navbar-content">
-          {/* Logo y marca */}
           <motion.div
             className="flex-shrink-0 flex items-center"
             whileHover={{ scale: 1.05 }}
@@ -90,7 +84,6 @@ const Navbar: React.FC = () => {
             </Link>
           </motion.div>
 
-          {/* Menú desktop */}
           <div className="hidden md:flex items-center space-x-6">
             <Link
               to="/"
@@ -142,7 +135,6 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Selector de moneda y botón de menú móvil */}
           <div className="flex items-center space-x-4">
             <motion.div
               className="relative"
@@ -160,7 +152,6 @@ const Navbar: React.FC = () => {
               </select>
             </motion.div>
 
-            {/* Botón de menú móvil */}
             <motion.button
               onClick={() => setIsOpen(!isOpen)}
               className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 transition-all duration-300"
@@ -217,7 +208,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Menú móvil */}
       <AnimatePresence>
         {isOpen && (
           <motion.div

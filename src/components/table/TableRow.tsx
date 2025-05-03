@@ -17,7 +17,7 @@ const TableRow = ({
   currencyCode,
   showAllColumns = false,
 }: TableRowProps) => {
-  const { personas, eliminarGasto } = useGastos();
+  const { eliminarGasto } = useGastos();
   const { formatCurrency } = useCurrency();
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -55,9 +55,9 @@ const TableRow = ({
         <div className="flex justify-between items-center gap-2">
           <span
             className="text-gray-700 truncate max-w-[140px]"
-            title={email || gasto.personaid}
+            title={email ?? gasto.personaid}
           >
-            {email || gasto.personaid}
+            {email ?? gasto.personaid}
           </span>
           <span className="font-medium bg-indigo-100 text-indigo-800 px-1.5 sm:px-2 py-0.5 rounded shrink-0 min-w-[40px] text-center">
             {gasto.porcentajepersona1}%
@@ -66,9 +66,9 @@ const TableRow = ({
         <div className="flex justify-between items-center gap-2">
           <span
             className="text-gray-700 truncate max-w-[140px]"
-            title={gasto.otraPersonaEmail || ""}
+            title={gasto.otraPersonaEmail ?? ""}
           >
-            {gasto.otraPersonaEmail}
+            {gasto.otraPersonaEmail ?? ""}
           </span>
           <span className="font-medium bg-pink-100 text-pink-800 px-1.5 sm:px-2 py-0.5 rounded shrink-0 min-w-[40px] text-center">
             {gasto.porcentajepersona2}%
@@ -106,15 +106,19 @@ const TableRow = ({
     return amount.toString();
   };
 
+  const getRowClass = () => {
+    if (isDeleting) {
+      return "opacity-0 transform scale-95";
+    }
+    if (isHovered) {
+      return "bg-gray-50 shadow-sm";
+    }
+    return "hover:bg-gray-50";
+  };
+
   return (
     <tr
-      className={`border-b transition-all duration-300 ${
-        isDeleting
-          ? "opacity-0 transform scale-95"
-          : isHovered
-          ? "bg-gray-50 shadow-sm"
-          : "hover:bg-gray-50"
-      }`}
+      className={`border-b transition-all duration-300 ${getRowClass()}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -156,9 +160,9 @@ const TableRow = ({
         <div className="flex items-center space-x-2">
           <span
             className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 truncate max-w-[120px]`}
-            title={email || gasto.personaid}
+            title={email ?? gasto.personaid}
           >
-            {email || gasto.personaid}
+            {email ?? gasto.personaid}
           </span>
           {showAllColumns && gasto.escompartido && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">

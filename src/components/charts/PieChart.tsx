@@ -39,7 +39,6 @@ const PieChart = () => {
   } | null>(null);
   const [emailsMap, setEmailsMap] = useState<Record<string, string>>({});
 
-  // Cargar emails al inicio
   useEffect(() => {
     const cargarEmails = async () => {
       const emailsTemp: Record<string, string> = {};
@@ -62,13 +61,11 @@ const PieChart = () => {
         if (!gasto.escompartido) {
           acc[email] = (acc[email] || 0) + gasto.monto;
         } else {
-          // Email del creador del gasto
           if (gasto.porcentajepersona1) {
             acc[email] =
               (acc[email] || 0) +
               (gasto.monto * gasto.porcentajepersona1) / 100;
           }
-          // Email de la otra persona
           if (gasto.porcentajepersona2 && gasto.otraPersonaEmail) {
             acc[gasto.otraPersonaEmail] =
               (acc[gasto.otraPersonaEmail] || 0) +
@@ -139,21 +136,19 @@ const PieChart = () => {
   );
 
   const obtenerColorPersona = useCallback((personaid: string) => {
-    // Generate a consistent color based on the email/persona ID
     const colors = [
-      "#4F46E5", // Indigo
-      "#EC4899", // Pink
-      "#10B981", // Emerald
-      "#F59E0B", // Amber
-      "#3B82F6", // Blue
-      "#8B5CF6", // Violet
-      "#EF4444", // Red
-      "#14B8A6", // Teal
-      "#F97316", // Orange
-      "#6366F1", // Indigo
+      "#4F46E5",
+      "#EC4899",
+      "#10B981",
+      "#F59E0B",
+      "#3B82F6",
+      "#8B5CF6",
+      "#EF4444",
+      "#14B8A6",
+      "#F97316",
+      "#6366F1",
     ];
 
-    // Create a hash of the email/persona ID to get a consistent index
     let hash = 0;
     for (let i = 0; i < personaid.length; i++) {
       hash = personaid.charCodeAt(i) + ((hash << 5) - hash);
@@ -171,7 +166,6 @@ const PieChart = () => {
       );
       return generarTonoGasto(colorBase, index, gastosDelMes.length);
     } else {
-      // Return a valid hex color for persona view
       return obtenerColorPersona(clave);
     }
   };
@@ -363,7 +357,7 @@ const PieChart = () => {
     setIsAnimating(true);
     setAnimProgress(0);
     let startTime: number;
-    const duration = 800; // duración en ms
+    const duration = 800;
 
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -461,12 +455,10 @@ const PieChart = () => {
         titulo = `Gastos de ${clave}`;
         subtitulo = `${gastosFiltrados.length} gastos registrados`;
       } else {
-        // Filtrar gastos por email
         gastosFiltrados = gastos.filter((g) => {
           const emailGasto = emailsMap[g.personaid] || g.personaid;
           const emailOtraPersona = g.otraPersonaEmail;
 
-          // Incluir gastos donde el email es el creador o el participante
           return (
             emailGasto === clave ||
             (g.escompartido && emailOtraPersona === clave)
@@ -492,7 +484,6 @@ const PieChart = () => {
         return sum + g.monto;
       }, 0);
 
-      // Calcular estadísticas adicionales
       const gastosCompartidos = gastosFiltrados.filter((g) => g.escompartido);
       const gastosNoCompartidos = gastosFiltrados.filter(
         (g) => !g.escompartido

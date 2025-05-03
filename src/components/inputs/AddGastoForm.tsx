@@ -16,13 +16,10 @@ export const AddGastoForm: React.FC = () => {
   const [mes, setMes] = useState<string>("enero");
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Set default persona when component mounts
   useEffect(() => {
     if (personas && personas.length > 0) {
-      // Get current user's email from Supabase
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user) {
-          // Find persona that matches user's email
           const userPersona = personas.find((p) => p.email === user.email);
           if (userPersona) {
             setSelectedPersona(userPersona.id);
@@ -32,52 +29,47 @@ export const AddGastoForm: React.FC = () => {
     }
   }, [personas]);
 
-  // Generate default description
   const generateDefaultDescription = () => {
     if (!mes) return "Nombre de gasto";
 
-    // Get all gastos for the selected month
     const gastosDelMes = gastos.filter((g) => g.mes === mes);
 
-    // Find the highest number in existing descriptions
     let maxNumber = 0;
     gastosDelMes.forEach((g) => {
-      const match = g.descripcion.match(/\((\d+)\)$/);
+      const regex = /\((\d+)\)$/;
+      const match = regex.exec(g.descripcion);
       if (match) {
         const num = parseInt(match[1]);
         if (num > maxNumber) maxNumber = num;
       }
     });
 
-    return `Nombre de gasto${maxNumber > 0 ? ` (${maxNumber + 1})` : ""}`;
+    return (
+      "Nombre de gasto" + (maxNumber > 0 ? " (" + (maxNumber + 1) + ")" : "")
+    );
   };
 
-  // Update description when month changes
   useEffect(() => {
     setDescripcion(generateDefaultDescription());
   }, [mes, gastos]);
 
-  // Sync percentages
-  const handlePercentageChange = (value: number, isPercentage1: boolean) => {
-    if (isPercentage1) {
-      setPercentage1(value);
-      setPercentage2(100 - value);
-    } else {
-      setPercentage2(value);
-      setPercentage1(100 - value);
-    }
+  const handlePercentage1Change = (value: number) => {
+    setPercentage1(value);
+    setPercentage2(100 - value);
   };
 
-  // Handle monto input
+  const handlePercentage2Change = (value: number) => {
+    setPercentage2(value);
+    setPercentage1(100 - value);
+  };
+
   const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow empty string, numbers, and decimal point
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setMonto(value);
     }
   };
 
-  // Función para emitir el evento de preview
   const emitPreviewEvent = () => {
     if (!selectedPersona || !monto || !descripcion || !mes) return;
 
@@ -97,7 +89,6 @@ export const AddGastoForm: React.FC = () => {
     );
   };
 
-  // Emit preview event when any relevant field changes
   useEffect(() => {
     emitPreviewEvent();
   }, [
@@ -121,23 +112,6 @@ export const AddGastoForm: React.FC = () => {
     );
   }
 
-  // Función para validar si el email existe
-  const validarEmail = async (email: string) => {
-    // Primero buscar en la tabla personas
-    const { data, error } = await supabase
-      .from("personas")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-
-    // Si se encuentra en personas, está validado
-    if (data) return true;
-
-    // Si no está en personas, podría estar solo registrado en auth
-    // En este caso, informar al usuario pero permitir continuar
-    return false;
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedPersona) {
@@ -156,7 +130,6 @@ export const AddGastoForm: React.FC = () => {
       return;
     }
 
-    // Validar que el monto no exceda el límite
     if (montoValue > 99999999.99) {
       alert("El monto no puede exceder $99,999,999.99");
       return;
@@ -186,7 +159,6 @@ export const AddGastoForm: React.FC = () => {
       setMonto("");
       setDescripcion(generateDefaultDescription());
       setMes("enero");
-      // Recargar la página después de agregar el gasto
       window.location.reload();
     } catch (error) {
       console.error("Error al agregar gasto:", error);
@@ -329,7 +301,7 @@ export const AddGastoForm: React.FC = () => {
                 max="100"
                 value={percentage1}
                 onChange={(e) =>
-                  handlePercentageChange(parseInt(e.target.value), true)
+                  handlePercentage1Change(parseInt(e.target.value))
                 }
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               />
@@ -350,7 +322,7 @@ export const AddGastoForm: React.FC = () => {
                 max="100"
                 value={percentage2}
                 onChange={(e) =>
-                  handlePercentageChange(parseInt(e.target.value), false)
+                  handlePercentage2Change(parseInt(e.target.value))
                 }
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
               />

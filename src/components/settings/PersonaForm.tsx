@@ -17,7 +17,6 @@ export const PersonaForm: React.FC<PersonaFormProps> = ({ personaId }) => {
   const [sueldo, setSueldo] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (personas && personas.length >= 2) {
@@ -47,13 +46,25 @@ export const PersonaForm: React.FC<PersonaFormProps> = ({ personaId }) => {
     setSueldo(parseFloat(value) || 0);
   };
 
+  const getBackgroundColor = (isEditing: boolean, isDarkMode: boolean) => {
+    if (isEditing) {
+      return isDarkMode ? "rgb(99, 102, 241)" : "rgb(79, 70, 229)";
+    }
+    return isDarkMode ? "rgb(31, 41, 55)" : "rgb(243, 244, 246)";
+  };
+
+  const getTextColor = (isEditing: boolean, isDarkMode: boolean) => {
+    if (isEditing) {
+      return "white";
+    }
+    return isDarkMode ? "rgb(156, 163, 175)" : "rgb(75, 85, 99)";
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
@@ -74,18 +85,8 @@ export const PersonaForm: React.FC<PersonaFormProps> = ({ personaId }) => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             style={{
-              backgroundColor: isEditing
-                ? isDarkMode
-                  ? "rgb(99, 102, 241)"
-                  : "rgb(79, 70, 229)"
-                : isDarkMode
-                ? "rgb(31, 41, 55)"
-                : "rgb(243, 244, 246)",
-              color: isEditing
-                ? "white"
-                : isDarkMode
-                ? "rgb(156, 163, 175)"
-                : "rgb(75, 85, 99)",
+              backgroundColor: getBackgroundColor(isEditing, isDarkMode),
+              color: getTextColor(isEditing, isDarkMode),
             }}
           >
             <svg

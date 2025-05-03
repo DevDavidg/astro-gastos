@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useGastos } from "../../context/GastosContext";
 
 interface FutureExpense {
   id: string;
@@ -15,7 +14,6 @@ interface FutureExpense {
 }
 
 const FutureExpensesList: React.FC = () => {
-  const { personas } = useGastos();
   const [futureExpenses, setFutureExpenses] = useState<FutureExpense[]>([]);
   const [newExpense, setNewExpense] = useState<Partial<FutureExpense>>({
     description: "",
@@ -39,13 +37,11 @@ const FutureExpensesList: React.FC = () => {
   }, [futureExpenses]);
 
   const handleAddExpense = () => {
-    // Validación básica
     if (!newExpense.description || !newExpense.amount) {
       alert("Por favor complete la descripción y monto");
       return;
     }
 
-    // Validación para gastos compartidos
     if (newExpense.isShared) {
       if (!newExpense.sharedEmail) {
         alert(
@@ -73,7 +69,7 @@ const FutureExpensesList: React.FC = () => {
       porcentajeOtro: newExpense.isShared
         ? newExpense.porcentajeOtro
         : undefined,
-      date: newExpense.date || new Date().toISOString().split("T")[0],
+      date: newExpense.date ?? new Date().toISOString().split("T")[0],
       isCompleted: false,
       isShared: newExpense.isShared || false,
     };
@@ -135,7 +131,7 @@ const FutureExpensesList: React.FC = () => {
             <input
               type="number"
               placeholder="Monto"
-              value={newExpense.amount || ""}
+              value={newExpense.amount ?? ""}
               onChange={(e) =>
                 setNewExpense({ ...newExpense, amount: Number(e.target.value) })
               }
@@ -147,13 +143,16 @@ const FutureExpensesList: React.FC = () => {
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
+                id="isShared"
                 checked={newExpense.isShared}
                 onChange={(e) =>
                   setNewExpense({ ...newExpense, isShared: e.target.checked })
                 }
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
-              <label className="text-sm text-gray-700">Compartido</label>
+              <label htmlFor="isShared" className="text-sm text-gray-700">
+                Compartido
+              </label>
             </div>
 
             <input
@@ -172,7 +171,7 @@ const FutureExpensesList: React.FC = () => {
                 <input
                   type="email"
                   placeholder="Email de la otra persona"
-                  value={newExpense.sharedEmail || ""}
+                  value={newExpense.sharedEmail ?? ""}
                   onChange={(e) =>
                     setNewExpense({
                       ...newExpense,
@@ -185,11 +184,15 @@ const FutureExpensesList: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="porcentajeYo"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Porcentaje Mio
                   </label>
                   <input
                     type="number"
+                    id="porcentajeYo"
                     min="0"
                     max="100"
                     value={newExpense.porcentajeYo}
@@ -200,11 +203,15 @@ const FutureExpensesList: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="porcentajeOtro"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Porcentaje de {newExpense.sharedEmail}
                   </label>
                   <input
                     type="number"
+                    id="porcentajeOtro"
                     min="0"
                     max="100"
                     value={newExpense.porcentajeOtro}

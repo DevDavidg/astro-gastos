@@ -63,15 +63,20 @@ export const UserPreferencesForm: React.FC = () => {
     <div className="max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-6">
-          {/* Moneda */}
           <div>
-            <label className="text-base font-medium text-gray-900 dark:text-white">
+            <label
+              htmlFor="currency-group"
+              className="text-base font-medium text-gray-900 dark:text-white"
+            >
               Moneda
             </label>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Selecciona la moneda principal para tus gastos
             </p>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div
+              id="currency-group"
+              className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+            >
               {currencies.map((currency) => (
                 <motion.div
                   key={currency.value}
@@ -79,14 +84,17 @@ export const UserPreferencesForm: React.FC = () => {
                   whileTap={{ scale: 0.98 }}
                 >
                   <label
+                    htmlFor={`currency-${currency.value}`}
                     className={`relative flex cursor-pointer rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm focus:outline-none ${
                       formData.currency === currency.value
                         ? "border-indigo-500 ring-2 ring-indigo-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
+                    aria-label={`Seleccionar moneda ${currency.label}`}
                   >
                     <input
                       type="radio"
+                      id={`currency-${currency.value}`}
                       name="currency"
                       value={currency.value}
                       className="sr-only"
@@ -117,9 +125,11 @@ export const UserPreferencesForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Tema */}
           <div>
-            <label className="text-base font-medium text-gray-900 dark:text-white">
+            <label
+              htmlFor="theme-toggle"
+              className="text-base font-medium text-gray-900 dark:text-white"
+            >
               Tema
             </label>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -128,6 +138,7 @@ export const UserPreferencesForm: React.FC = () => {
             <div className="mt-4">
               <button
                 type="button"
+                id="theme-toggle"
                 onClick={toggleDarkMode}
                 className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 style={{
@@ -164,21 +175,29 @@ export const UserPreferencesForm: React.FC = () => {
                   )}
                 </span>
               </button>
-              <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+              <label
+                htmlFor="theme-toggle"
+                className="ml-3 text-sm text-gray-500 dark:text-gray-400"
+              >
                 {isDarkMode ? "Modo oscuro" : "Modo claro"}
-              </span>
+              </label>
             </div>
           </div>
 
-          {/* Idioma */}
           <div>
-            <label className="text-base font-medium text-gray-900 dark:text-white">
+            <label
+              htmlFor="language-group"
+              className="text-base font-medium text-gray-900 dark:text-white"
+            >
               Idioma
             </label>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Selecciona el idioma de la aplicación
             </p>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div
+              id="language-group"
+              className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+            >
               {languages.map((language) => (
                 <motion.div
                   key={language.value}
@@ -186,14 +205,17 @@ export const UserPreferencesForm: React.FC = () => {
                   whileTap={{ scale: 0.98 }}
                 >
                   <label
+                    htmlFor={`language-${language.value}`}
                     className={`relative flex cursor-pointer rounded-lg border bg-white dark:bg-gray-800 p-4 shadow-sm focus:outline-none ${
                       formData.language === language.value
                         ? "border-indigo-500 ring-2 ring-indigo-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
+                    aria-label={`Seleccionar idioma ${language.label}`}
                   >
                     <input
                       type="radio"
+                      id={`language-${language.value}`}
                       name="language"
                       value={language.value}
                       className="sr-only"

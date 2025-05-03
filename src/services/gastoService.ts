@@ -1,9 +1,6 @@
 import { supabase } from "../lib/supabase";
 import type { Gasto, Persona } from "../types/gasto";
 
-/**
- * Obtiene todas las personas del usuario actual
- */
 export const obtenerPersonas = async (): Promise<Persona[]> => {
   const { data, error } = await supabase.from("personas").select("*");
 
@@ -15,9 +12,6 @@ export const obtenerPersonas = async (): Promise<Persona[]> => {
   return data || [];
 };
 
-/**
- * Obtiene todos los gastos del usuario actual
- */
 export const obtenerGastos = async (): Promise<Gasto[]> => {
   const {
     data: { user },
@@ -29,7 +23,6 @@ export const obtenerGastos = async (): Promise<Gasto[]> => {
     throw new Error("Usuario no autenticado");
   }
 
-  // Obtener todos los gastos del usuario
   const { data: gastosUsuario, error: errorGastosUsuario } = await supabase
     .from("gastos")
     .select("*")
@@ -40,7 +33,6 @@ export const obtenerGastos = async (): Promise<Gasto[]> => {
     throw errorGastosUsuario;
   }
 
-  // Obtener gastos compartidos donde el usuario es la otra persona
   const { data: gastosCompartidos, error: errorGastosCompartidos } =
     await supabase
       .from("gastos")
@@ -55,7 +47,6 @@ export const obtenerGastos = async (): Promise<Gasto[]> => {
     throw errorGastosCompartidos;
   }
 
-  // Combinar y eliminar duplicados
   const todosLosGastos = [
     ...(gastosUsuario || []),
     ...(gastosCompartidos || []),
@@ -77,9 +68,6 @@ export const obtenerGastos = async (): Promise<Gasto[]> => {
   }));
 };
 
-/**
- * Crea un nuevo gasto en la base de datos
- */
 export const crearGasto = async (
   gasto: Omit<Gasto, "id" | "fechaCreacion" | "fechaActualizacion">
 ): Promise<Gasto> => {
@@ -87,7 +75,6 @@ export const crearGasto = async (
     throw new Error("El usuario_id es requerido para crear un gasto");
   }
 
-  // Preparar el objeto para insertar
   const gastoParaInsertar: any = {
     mes: gasto.mes,
     descripcion: gasto.descripcion,
@@ -98,8 +85,7 @@ export const crearGasto = async (
     porcentajepersona1: gasto.porcentajepersona1,
     porcentajepersona2: gasto.porcentajepersona2,
     usuarioid: gasto.usuarioid,
-    // AGREGAR ESTA LÍNEA para incluir otrapersonaemail
-    otrapersonaemail: gasto.otraPersonaEmail || null,
+    otrapersonaemail: gasto.otraPersonaEmail ?? null,
   };
 
   const { data, error } = await supabase
@@ -126,12 +112,8 @@ export const crearGasto = async (
   };
 };
 
-/**
- * Elimina un gasto de la base de datos
- */
 export const eliminarGasto = async (id: string): Promise<void> => {
   try {
-    // Obtener información del usuario actual
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -140,7 +122,6 @@ export const eliminarGasto = async (id: string): Promise<void> => {
       throw new Error("Usuario no autenticado");
     }
 
-    // Primero verificar si el gasto existe y obtener sus detalles
     const { data: gastoExistente, error: errorBusqueda } = await supabase
       .from("gastos")
       .select("*")
@@ -152,7 +133,6 @@ export const eliminarGasto = async (id: string): Promise<void> => {
       return;
     }
 
-    // Verificar si el usuario tiene permiso para eliminar
     const esPropietario = gastoExistente.usuarioid === user.id;
     const esDestinatario = gastoExistente.otrapersonaemail === user.email;
 
@@ -161,7 +141,6 @@ export const eliminarGasto = async (id: string): Promise<void> => {
       throw new Error("No tienes permisos para eliminar este gasto");
     }
 
-    // Eliminar el gasto
     const { error: errorEliminacion } = await supabase
       .from("gastos")
       .delete()
@@ -172,10 +151,8 @@ export const eliminarGasto = async (id: string): Promise<void> => {
       throw errorEliminacion;
     }
 
-    // Esperar un momento para que la base de datos procese
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Verificar que realmente se eliminó
     const { data: checkData } = await supabase
       .from("gastos")
       .select("id")
@@ -191,9 +168,6 @@ export const eliminarGasto = async (id: string): Promise<void> => {
   }
 };
 
-/**
- * Actualiza el sueldo de una persona
- */
 export const actualizarSueldoPersona = async (
   personaId: string,
   monto: number
@@ -209,9 +183,6 @@ export const actualizarSueldoPersona = async (
   }
 };
 
-/**
- * Actualiza el nombre de una persona
- */
 export const actualizarNombrePersona = async (
   personaId: string,
   nombre: string
@@ -226,14 +197,9 @@ export const actualizarNombrePersona = async (
     throw error;
   }
 };
-
-/**
- * Obtiene el email de una persona por su ID
- */
 export const obtenerEmailPersona = async (
   personaId: string
 ): Promise<string | null> => {
-  // Usar RPC para obtener el email directamente con el ID de la persona
   const { data: userData, error: userError } = await supabase.rpc(
     "get_user_email_by_persona_id",
     { persona_id: personaId }
@@ -244,5 +210,5 @@ export const obtenerEmailPersona = async (
     return null;
   }
 
-  return userData || null;
+  return userData ?? null;
 };

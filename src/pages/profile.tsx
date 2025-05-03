@@ -27,7 +27,6 @@ const ProfilePage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"
         >
-          {/* Header */}
           <div className="relative">
             <div className="h-32 bg-gradient-to-r from-indigo-500 to-purple-600" />
             <div className="absolute -bottom-16 left-8">
@@ -37,7 +36,6 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Profile Info */}
           <div className="pt-20 px-8 pb-8">
             <div className="flex justify-between items-start">
               <div>
@@ -58,7 +56,6 @@ const ProfilePage: React.FC = () => {
               </motion.button>
             </div>
 
-            {/* Tabs */}
             <div className="mt-8 border-b border-gray-200 dark:border-gray-700">
               <nav className="flex space-x-8">
                 {tabs.map((tab) => (
@@ -80,7 +77,6 @@ const ProfilePage: React.FC = () => {
               </nav>
             </div>
 
-            {/* Tab Content */}
             <div className="mt-8">
               {activeTab === "overview" && (
                 <motion.div
@@ -99,7 +95,7 @@ const ProfilePage: React.FC = () => {
                             Nombre
                           </p>
                           <p className="text-gray-900 dark:text-white font-medium">
-                            {persona1?.nombre || "No definido"}
+                            {persona1?.nombre ?? "No definido"}
                           </p>
                         </div>
                         <div>
@@ -107,7 +103,7 @@ const ProfilePage: React.FC = () => {
                             Sueldo
                           </p>
                           <p className="text-gray-900 dark:text-white font-medium">
-                            {formatCurrency(persona1?.sueldo || 0)}
+                            {formatCurrency(persona1?.sueldo ?? 0)}
                           </p>
                         </div>
                       </div>
@@ -123,7 +119,7 @@ const ProfilePage: React.FC = () => {
                             Nombre
                           </p>
                           <p className="text-gray-900 dark:text-white font-medium">
-                            {persona2?.nombre || "No definido"}
+                            {persona2?.nombre ?? "No definido"}
                           </p>
                         </div>
                         <div>
@@ -131,7 +127,7 @@ const ProfilePage: React.FC = () => {
                             Sueldo
                           </p>
                           <p className="text-gray-900 dark:text-white font-medium">
-                            {formatCurrency(persona2?.sueldo || 0)}
+                            {formatCurrency(persona2?.sueldo ?? 0)}
                           </p>
                         </div>
                       </div>
@@ -149,7 +145,7 @@ const ProfilePage: React.FC = () => {
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
-                            (persona1?.sueldo || 0) + (persona2?.sueldo || 0)
+                            (persona1?.sueldo ?? 0) + (persona2?.sueldo ?? 0)
                           )}
                         </p>
                       </div>
@@ -159,8 +155,8 @@ const ProfilePage: React.FC = () => {
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
-                            ((persona1?.sueldo || 0) +
-                              (persona2?.sueldo || 0)) /
+                            ((persona1?.sueldo ?? 0) +
+                              (persona2?.sueldo ?? 0)) /
                               2
                           )}
                         </p>
@@ -172,7 +168,7 @@ const ProfilePage: React.FC = () => {
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(
                             Math.abs(
-                              (persona1?.sueldo || 0) - (persona2?.sueldo || 0)
+                              (persona1?.sueldo ?? 0) - (persona2?.sueldo ?? 0)
                             )
                           )}
                         </p>
@@ -243,7 +239,7 @@ const ProfilePage: React.FC = () => {
                                 Persona 1
                               </span>
                               <span className="text-gray-900 dark:text-white font-medium">
-                                {formatCurrency(persona1?.sueldo || 0)}
+                                {formatCurrency(persona1?.sueldo ?? 0)}
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -251,9 +247,9 @@ const ProfilePage: React.FC = () => {
                                 className="bg-indigo-500 h-2 rounded-full"
                                 style={{
                                   width: `${
-                                    ((persona1?.sueldo || 0) /
-                                      ((persona1?.sueldo || 0) +
-                                        (persona2?.sueldo || 0))) *
+                                    ((persona1?.sueldo ?? 0) /
+                                      ((persona1?.sueldo ?? 0) +
+                                        (persona2?.sueldo ?? 0))) *
                                     100
                                   }%`,
                                 }}
@@ -266,7 +262,7 @@ const ProfilePage: React.FC = () => {
                                 Persona 2
                               </span>
                               <span className="text-gray-900 dark:text-white font-medium">
-                                {formatCurrency(persona2?.sueldo || 0)}
+                                {formatCurrency(persona2?.sueldo ?? 0)}
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -274,9 +270,9 @@ const ProfilePage: React.FC = () => {
                                 className="bg-purple-500 h-2 rounded-full"
                                 style={{
                                   width: `${
-                                    ((persona2?.sueldo || 0) /
-                                      ((persona1?.sueldo || 0) +
-                                        (persona2?.sueldo || 0))) *
+                                    ((persona2?.sueldo ?? 0) /
+                                      ((persona1?.sueldo ?? 0) +
+                                        (persona2?.sueldo ?? 0))) *
                                     100
                                   }%`,
                                 }}
