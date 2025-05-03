@@ -1,5 +1,3 @@
-import React from "react";
-
 interface TableHeaderProps {
   showAllColumns?: boolean;
   onExpand?: () => void;

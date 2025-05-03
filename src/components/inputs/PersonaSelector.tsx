@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useGastos } from "../../context/GastosContext";
-import type { Persona } from "../../types/gasto";
 
 interface PersonaSelectorProps {
   value: string;

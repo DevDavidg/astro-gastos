@@ -1,35 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { Gasto } from "../../types/gasto";
 import { useGastos } from "../../context/GastosContext";
 import { useCurrency } from "../../hooks/useCurrency";
-import { obtenerEmailPersona } from "../../services/gastoService";
 
 interface TableRowProps {
   gasto: Gasto;
   onDelete: (id: string) => void;
-  currencyCode: string;
   showAllColumns?: boolean;
 }
 
 const TableRow = ({
   gasto,
   onDelete,
-  currencyCode,
   showAllColumns = false,
 }: TableRowProps) => {
-  const { eliminarGasto } = useGastos();
+  const { eliminarGasto, emailsMap } = useGastos();
   const { formatCurrency } = useCurrency();
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchEmail = async () => {
-      const personaEmail = await obtenerEmailPersona(gasto.personaid);
-      setEmail(personaEmail);
-    };
-    fetchEmail();
-  }, [gasto.personaid]);
 
   const handleDelete = () => {
     setIsDeleting(true);
@@ -45,6 +33,8 @@ const TableRow = ({
     }
   };
 
+  const email = emailsMap[gasto.personaid] || gasto.personaid;
+
   const renderizarInfoCompartido = () => {
     if (!gasto.escompartido) {
       return <span className="text-gray-600">No</span>;
@@ -53,11 +43,8 @@ const TableRow = ({
     return (
       <div className="text-xs space-y-1 bg-indigo-50 p-1.5 sm:p-2 rounded-lg border border-indigo-100">
         <div className="flex justify-between items-center gap-2">
-          <span
-            className="text-gray-700 truncate max-w-[140px]"
-            title={email ?? gasto.personaid}
-          >
-            {email ?? gasto.personaid}
+          <span className="text-gray-700 truncate max-w-[140px]" title={email}>
+            {email}
           </span>
           <span className="font-medium bg-indigo-100 text-indigo-800 px-1.5 sm:px-2 py-0.5 rounded shrink-0 min-w-[40px] text-center">
             {gasto.porcentajepersona1}%
@@ -160,9 +147,9 @@ const TableRow = ({
         <div className="flex items-center space-x-2">
           <span
             className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 truncate max-w-[120px]`}
-            title={email ?? gasto.personaid}
+            title={email}
           >
-            {email ?? gasto.personaid}
+            {email}
           </span>
           {showAllColumns && gasto.escompartido && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">

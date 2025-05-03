@@ -1,0 +1,15 @@
+{
+  "name": "AstroGastos",
+  "short_name": "AstroGastos",
+  "icons": [
+    {
+      "src": "/astro-gastos/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/astro-gastos/"
+}

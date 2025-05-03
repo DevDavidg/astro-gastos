@@ -5,20 +5,18 @@ import { useGastos } from "../../context/GastosContext";
 import { obtenerColorMes, generarTonoGasto } from "../../utils/colorMeses";
 import { useCurrency } from "../../hooks/useCurrency";
 import { motion, AnimatePresence } from "framer-motion";
-import DetallesGastosModal from "./DetallesGastosModal";
 import { obtenerEmailPersona } from "../../services/gastoService";
 
 const PieChart = () => {
-  const { gastos, personas } = useGastos();
-  const { currency, formatCurrency } = useCurrency();
+  const { gastos, personas, emailsMap } = useGastos();
+  const { formatCurrency } = useCurrency();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const [filtroVista, setFiltroVista] = useState<"mes" | "email">("mes");
-  const [emailSeleccionado, setEmailSeleccionado] = useState<string>("todos");
+  const [emailSeleccionado, setEmailSeleccionado] = useState("todos");
   const [animProgress, setAnimProgress] = useState(0);
   const [hoveredSlice, setHoveredSlice] = useState<string | null>(null);
   const [previewGasto, setPreviewGasto] = useState<Partial<Gasto> | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const prevGastosLengthRef = useRef<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,21 +35,9 @@ const PieChart = () => {
       porcentajeNoCompartido: number;
     };
   } | null>(null);
-  const [emailsMap, setEmailsMap] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    const cargarEmails = async () => {
-      const emailsTemp: Record<string, string> = {};
-      for (const gasto of gastos) {
-        if (!emailsTemp[gasto.personaid]) {
-          const email = await obtenerEmailPersona(gasto.personaid);
-          if (email) emailsTemp[gasto.personaid] = email;
-        }
-      }
-      setEmailsMap(emailsTemp);
-    };
-    cargarEmails();
-  }, [gastos]);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState({ title: "", value: 0 });
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const calcularGastosPorEmail = useCallback(
     (gastos: Gasto[]) => {
@@ -676,7 +662,7 @@ const PieChart = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   if (filtroVista === "mes") {
-                    setSelectedMonth(clave);
+                    handleSliceClick(clave);
                   }
                 }}
               >

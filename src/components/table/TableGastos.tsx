@@ -63,7 +63,7 @@ const TableGastos = () => {
     isLoading: isDataLoading,
     recargarDatos,
   } = useGastos();
-  const { currency, formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency();
   const [animatedGastos, setAnimatedGastos] = useState<Gasto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm] = useState("");
@@ -158,7 +158,6 @@ const TableGastos = () => {
         key={gasto.id}
         gasto={gasto}
         onDelete={eliminarGasto}
-        currencyCode={currency}
         showAllColumns={false}
       />
     ));

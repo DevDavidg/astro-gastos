@@ -15,6 +15,7 @@ import {
   eliminarGasto as eliminarGastoApi,
   actualizarSueldoPersona as actualizarSueldoPersonaApi,
   actualizarNombrePersona as actualizarNombrePersonaApi,
+  obtenerEmailPersona,
 } from "../services/gastoService";
 import {
   getUserPreferences,
@@ -31,20 +32,20 @@ interface GastosContextType {
   gastos: Gasto[];
   personas: Persona[];
   isLoading: boolean;
-  userPreferences: UserPreferences | null;
+  userPreferences: UserPreferences;
+  emailsMap: Record<string, string>;
   agregarGasto: (gasto: GastoInput) => Promise<void>;
   eliminarGasto: (id: string) => Promise<void>;
-  actualizarSueldoPersona: (personaId: string, monto: number) => Promise<void>;
-  actualizarNombrePersona: (personaId: string, nombre: string) => Promise<void>;
-  obtenerTotalGastosPorPersona: (personaId: string) => number;
-  calcularPorcentajeGasto: (
-    sueldoPersona1: number,
-    sueldoPersona2: number
-  ) => { porcentajePersona1: number; porcentajePersona2: number };
-  recargarDatos: () => Promise<void>;
-  updateUserPreferences: (
-    preferences: Partial<UserPreferences>
+  actualizarSueldoPersona: (
+    personaId: string,
+    nuevoSueldo: number
   ) => Promise<void>;
+  actualizarNombrePersona: (
+    personaId: string,
+    nuevoNombre: string
+  ) => Promise<void>;
+  recargarDatos: () => Promise<void>;
+  setUserPreferences: (preferences: UserPreferences) => void;
 }
 
 const GastosContext = createContext<GastosContextType | undefined>(undefined);
@@ -55,9 +56,11 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [userPreferences, setUserPreferences] =
-    useState<UserPreferences | null>(null);
+  const [emailsMap, setEmailsMap] = useState<Record<string, string>>({});
+  const [userPreferences, setUserPreferences] = useState<UserPreferences>(
+    getUserPreferences()
+  );
+  const [user, setUser] = useState<User | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -112,6 +115,19 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
       ]);
 
       if (personasData && personasData.length > 0) {
+        const emailsTemp: Record<string, string> = {};
+        const uniquePersonaIds = [
+          ...new Set(gastosData.map((g) => g.personaid)),
+        ];
+
+        await Promise.all(
+          uniquePersonaIds.map(async (personaId) => {
+            const email = await obtenerEmailPersona(personaId);
+            if (email) emailsTemp[personaId] = email;
+          })
+        );
+
+        setEmailsMap(emailsTemp);
         setGastos(gastosData);
         setPersonas(personasData);
         setUserPreferences(preferencesData);
@@ -241,12 +257,17 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
     }
   };
 
-  const actualizarSueldoPersona = async (personaId: string, monto: number) => {
+  const actualizarSueldoPersona = async (
+    personaId: string,
+    nuevoSueldo: number
+  ) => {
     try {
-      await actualizarSueldoPersonaApi(personaId, monto);
+      await actualizarSueldoPersonaApi(personaId, nuevoSueldo);
       setPersonas((prev) =>
         prev.map((persona) =>
-          persona.id === personaId ? { ...persona, sueldo: monto } : persona
+          persona.id === personaId
+            ? { ...persona, sueldo: nuevoSueldo }
+            : persona
         )
       );
     } catch (error) {
@@ -255,9 +276,12 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
     }
   };
 
-  const actualizarNombrePersona = async (personaId: string, nombre: string) => {
+  const actualizarNombrePersona = async (
+    personaId: string,
+    nuevoNombre: string
+  ) => {
     try {
-      await actualizarNombrePersonaApi(personaId, nombre);
+      await actualizarNombrePersonaApi(personaId, nuevoNombre);
       setPersonas((prev) =>
         prev.map((persona) =>
           persona.id === personaId ? { ...persona, nombre } : persona
@@ -333,6 +357,7 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
       personas,
       isLoading,
       userPreferences,
+      emailsMap,
       agregarGasto,
       eliminarGasto,
       actualizarSueldoPersona,
@@ -340,13 +365,14 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
       obtenerTotalGastosPorPersona,
       calcularPorcentajeGasto,
       recargarDatos,
-      updateUserPreferences: handleUpdateUserPreferences,
+      setUserPreferences: handleUpdateUserPreferences,
     }),
     [
       gastos,
       personas,
       isLoading,
       userPreferences,
+      emailsMap,
       agregarGasto,
       eliminarGasto,
       actualizarSueldoPersona,

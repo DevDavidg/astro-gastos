@@ -1,4 +1,3 @@
-import React from "react";
 import type { Gasto } from "../../types/gasto";
 import TableRow from "./TableRow";
 import TableHeader from "./TableHeader";
@@ -23,7 +22,7 @@ const TableExpandedModal = ({
   onDelete,
   totals,
 }: TableExpandedModalProps) => {
-  const { currency, formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency();
 
   if (!isOpen) return null;
 
@@ -78,7 +77,6 @@ const TableExpandedModal = ({
                       key={gasto.id}
                       gasto={gasto}
                       onDelete={onDelete}
-                      currencyCode={currency}
                       showAllColumns={true}
                     />
                   ))}
