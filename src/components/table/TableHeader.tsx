@@ -1,14 +1,27 @@
+import React, { useState } from "react";
+
 interface TableHeaderProps {
-  showAllColumns?: boolean;
+  showAllColumns: boolean;
   onExpand?: () => void;
   showExpandButton?: boolean;
+  onSort?: (criteria: "monto" | "mes" | "fecha") => void;
 }
 
-const TableHeader = ({
-  showAllColumns = false,
+const TableHeader: React.FC<TableHeaderProps> = ({
+  showAllColumns,
   onExpand,
   showExpandButton = false,
-}: TableHeaderProps) => {
+  onSort,
+}) => {
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  const handleSort = (criteria: "monto" | "mes" | "fecha") => {
+    if (onSort) {
+      onSort(criteria);
+      setShowSortMenu(false);
+    }
+  };
+
   const baseHeaderClass =
     "p-2 sm:p-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap";
 
@@ -58,19 +71,6 @@ const TableHeader = ({
         >
           <div className="flex items-center gap-1">
             <span>Monto</span>
-            <svg
-              className="w-4 h-4 text-gray-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
           </div>
         </th>
         <th
@@ -121,21 +121,68 @@ const TableHeader = ({
         {showAllColumns && (
           <>
             <th scope="col" className={baseHeaderClass} aria-sort="none">
-              <div className="flex items-center gap-1">
-                <span>Compartido</span>
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <path
-                    d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span>Compartido</span>
+                  <svg
+                    className="w-4 h-4 text-gray-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSortMenu(!showSortMenu)}
+                    className="ml-1 focus:outline-none"
+                    aria-label="Ordenar gastos"
+                  >
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  {showSortMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleSort("monto")}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Ordenar por monto
+                        </button>
+                        <button
+                          onClick={() => handleSort("mes")}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Ordenar por mes
+                        </button>
+                        <button
+                          onClick={() => handleSort("fecha")}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Ordenar por fecha
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </th>
             <th
@@ -144,19 +191,6 @@ const TableHeader = ({
               aria-label="Acciones"
             >
               <span className="sr-only">Acciones</span>
-              <svg
-                className="w-4 h-4 text-gray-400 mx-auto"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <path
-                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </th>
           </>
         )}

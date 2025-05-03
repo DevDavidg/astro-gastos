@@ -8,6 +8,7 @@ import React, {
 import type { ReactNode } from "react";
 import type { Gasto, Persona } from "../types/gasto";
 import type { UserPreferences } from "../types/userPreferences";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import {
   obtenerGastos,
@@ -284,11 +285,13 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
       await actualizarNombrePersonaApi(personaId, nuevoNombre);
       setPersonas((prev) =>
         prev.map((persona) =>
-          persona.id === personaId ? { ...persona, nombre } : persona
+          persona.id === personaId
+            ? { ...persona, nombre: nuevoNombre }
+            : persona
         )
       );
     } catch (error) {
-      console.error("Error al actualizar nombre:", error);
+      console.error("Error actualizando nombre de persona:", error);
       throw error;
     }
   };

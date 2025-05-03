@@ -70,6 +70,57 @@ const TableGastos = () => {
   const [filtroMes] = useState<string | null>(null);
   const [filtroPersona] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortCriteria, setSortCriteria] = useState<"monto" | "mes" | "fecha">(
+    "fecha"
+  );
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (criteria: "monto" | "mes" | "fecha") => {
+    if (criteria === sortCriteria) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCriteria(criteria);
+      setSortDirection("desc");
+    }
+  };
+
+  const sortGastos = (gastos: Gasto[]) => {
+    return [...gastos].sort((a, b) => {
+      const modifier = sortDirection === "asc" ? 1 : -1;
+
+      switch (sortCriteria) {
+        case "monto":
+          return (a.monto - b.monto) * modifier;
+        case "mes":
+          const meses = [
+            "enero",
+            "febrero",
+            "marzo",
+            "abril",
+            "mayo",
+            "junio",
+            "julio",
+            "agosto",
+            "septiembre",
+            "octubre",
+            "noviembre",
+            "diciembre",
+          ];
+          return (
+            (meses.indexOf(a.mes.toLowerCase()) -
+              meses.indexOf(b.mes.toLowerCase())) *
+            modifier
+          );
+        case "fecha":
+          return (
+            (new Date(b.fecha).getTime() - new Date(a.fecha).getTime()) *
+            modifier
+          );
+        default:
+          return 0;
+      }
+    });
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -153,7 +204,9 @@ const TableGastos = () => {
       );
     }
 
-    return gastosFiltrados.map((gasto) => (
+    const sortedGastos = sortGastos(gastosFiltrados).slice(0, 5);
+
+    return sortedGastos.map((gasto) => (
       <TableRow
         key={gasto.id}
         gasto={gasto}
@@ -182,6 +235,7 @@ const TableGastos = () => {
                 showAllColumns={false}
                 onExpand={() => setIsModalOpen(true)}
                 showExpandButton={gastosFiltrados.length > 0}
+                onSort={handleSort}
               />
               <tbody className="bg-white divide-y divide-gray-200">
                 {renderTableBody()}

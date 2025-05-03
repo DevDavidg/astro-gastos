@@ -2,6 +2,7 @@ import type { Gasto } from "../../types/gasto";
 import TableRow from "./TableRow";
 import TableHeader from "./TableHeader";
 import { useCurrency } from "../../hooks/useCurrency";
+import { useState, useEffect } from "react";
 
 interface TableExpandedModalProps {
   isOpen: boolean;
@@ -23,124 +24,88 @@ const TableExpandedModal = ({
   totals,
 }: TableExpandedModalProps) => {
   const { formatCurrency } = useCurrency();
+  const [sortedGastos, setSortedGastos] = useState(gastos);
+
+  const handleSort = (criteria: "monto" | "mes" | "fecha") => {
+    setSortedGastos((prev) => {
+      return [...prev].sort((a, b) => {
+        switch (criteria) {
+          case "monto":
+            return b.monto - a.monto;
+          case "mes":
+            const meses = [
+              "enero",
+              "febrero",
+              "marzo",
+              "abril",
+              "mayo",
+              "junio",
+              "julio",
+              "agosto",
+              "septiembre",
+              "octubre",
+              "noviembre",
+              "diciembre",
+            ];
+            return (
+              meses.indexOf(a.mes.toLowerCase()) -
+              meses.indexOf(b.mes.toLowerCase())
+            );
+          case "fecha":
+            return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+          default:
+            return 0;
+        }
+      });
+    });
+  };
+
+  useEffect(() => {
+    setSortedGastos(gastos);
+  }, [gastos]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <button
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity backdrop-blur-sm w-full h-full"
-        onClick={onClose}
-        aria-label="Cerrar modal"
-        type="button"
-      ></button>
+      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
 
-      <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-6xl">
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <div className="flex flex-col">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Detalles de Gastos
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Vista detallada de todos los gastos
-              </p>
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="sm:flex sm:items-start">
+              <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Detalles de Gastos
+                </h3>
+                <div className="mt-4">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <TableHeader showAllColumns={true} onSort={handleSort} />
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {sortedGastos.map((gasto) => (
+                        <TableRow
+                          key={gasto.id}
+                          gasto={gasto}
+                          onDelete={onDelete}
+                          showAllColumns={true}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1"
-              aria-label="Cerrar modal"
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
           </div>
-
-          <div className="p-6">
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <TableHeader showAllColumns={true} />
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {gastos.map((gasto) => (
-                    <TableRow
-                      key={gasto.id}
-                      gasto={gasto}
-                      onDelete={onDelete}
-                      showAllColumns={true}
-                    />
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-gradient-to-r from-indigo-50 via-white to-pink-50 border-t-2 border-gray-200">
-                    <td colSpan={6} className="p-6">
-                      <div className="flex flex-col items-end gap-4">
-                        <div className="flex flex-col items-end">
-                          <div className="text-sm text-gray-600 mb-1">
-                            Total General
-                          </div>
-                          <div className="text-3xl font-bold text-gray-900">
-                            {formatCurrency(totals.total)}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-16 gap-y-2 text-sm bg-white p-4 rounded-lg shadow-sm">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-indigo-600 font-medium">
-                              Gastos Compartidos:
-                            </span>
-                            <span className="font-semibold text-gray-900">
-                              {formatCurrency(totals.totalCompartido)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-pink-600 font-medium">
-                              Gastos No Compartidos:
-                            </span>
-                            <span className="font-semibold text-gray-900">
-                              {formatCurrency(totals.totalNoCompartido)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-indigo-600">
-                              % Compartido:
-                            </span>
-                            <span className="font-medium">
-                              {(
-                                (totals.totalCompartido / totals.total) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-pink-600">
-                              % No Compartido:
-                            </span>
-                            <span className="font-medium">
-                              {(
-                                (totals.totalNoCompartido / totals.total) *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="button"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              onClick={onClose}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       </div>

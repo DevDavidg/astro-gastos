@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { UserPreferences } from "../../types/userPreferences";
 
 export const UserPreferencesForm: React.FC = () => {
-  const { userPreferences, updateUserPreferences } = useGastos();
+  const { userPreferences, setUserPreferences } = useGastos();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [formData, setFormData] = useState<UserPreferences>({
     currency: "USD",
@@ -23,7 +23,7 @@ export const UserPreferencesForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateUserPreferences(formData);
+      setUserPreferences(formData);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {

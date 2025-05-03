@@ -13,11 +13,38 @@ export const AddGastoForm: React.FC = () => {
   const [otraPersonaEmail, setOtraPersonaEmail] = useState("");
   const [monto, setMonto] = useState<string>("");
   const [descripcion, setDescripcion] = useState<string>("");
-  const [mes, setMes] = useState<string>("enero");
+  const [mes, setMes] = useState<string>(() => {
+    const meses = [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ];
+    const mesActual = new Date().getMonth(); // 0-11
+    return meses[mesActual];
+  });
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (personas && personas.length > 0) {
+      const persona1 = personas.find((p) => p.nombre === "Persona 1");
+      if (persona1) {
+        setSelectedPersona(persona1.id);
+      }
+    }
+  }, [personas]);
+
+  useEffect(() => {
+    if (personas && personas.length > 0) {
+      // Luego intentamos encontrar la persona que coincida con el email del usuario
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user) {
           const userPersona = personas.find((p) => p.email === user.email);
@@ -169,7 +196,7 @@ export const AddGastoForm: React.FC = () => {
     <div className="bg-white rounded-lg shadow-md p-6 mb-8">
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          <div className="mb-4">
             <label
               htmlFor="monto"
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -177,14 +204,14 @@ export const AddGastoForm: React.FC = () => {
               Monto
             </label>
             <input
-              type="text"
+              type="number"
               id="monto"
               name="monto"
               required
               value={monto}
               onChange={handleMontoChange}
               className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
-              placeholder="0.00"
+              placeholder=""
             />
           </div>
 
