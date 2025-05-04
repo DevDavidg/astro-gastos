@@ -12,8 +12,8 @@ const isBrowser = typeof window !== "undefined";
 
 export const useCurrency = () => {
   const getCurrency = () => {
-    if (!isBrowser) return "USD";
-    return localStorage.getItem("currency") || "USD";
+    if (!isBrowser) return "ARS";
+    return localStorage.getItem("currency") || "ARS";
   };
 
   const setCurrency = (newCurrency: string) => {

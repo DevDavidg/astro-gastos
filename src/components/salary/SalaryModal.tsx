@@ -94,10 +94,16 @@ const SalaryModal: React.FC = () => {
     };
   }, [expenseHistory]);
 
+  const hasSalary = () => {
+    if (!isBrowser) return false;
+    return !!localStorage.getItem("userSalary");
+  };
+
   const handleSaveSalary = () => {
     if (!isBrowser) return;
     if (salary > 0) {
       localStorage.setItem("userSalary", salary.toString());
+      setSalary(salary);
       setIsOpen(false);
     }
   };
@@ -228,9 +234,15 @@ const SalaryModal: React.FC = () => {
                 type="number"
                 id="salary"
                 value={salary || ""}
-                onChange={(e) => setSalary(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "" || /^\d+$/.test(value)) {
+                    setSalary(value === "" ? 0 : Number(value));
+                  }
+                }}
                 className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Ingrese su salario"
+                autoFocus
               />
             </div>
           </div>
@@ -368,6 +380,12 @@ const SalaryModal: React.FC = () => {
     );
   };
 
+  // Si no hay salario configurado, solo mostrar el modal de configuración
+  if (!hasSalary()) {
+    return <EditSalaryDialog />;
+  }
+
+  // Si hay salario configurado, mostrar el componente completo
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-4">
       <EditSalaryDialog />
@@ -417,65 +435,6 @@ const SalaryModal: React.FC = () => {
               <p className="text-sm text-gray-500">
                 {getSavingsPercentage().toFixed(1)}% del salario
               </p>
-            </div>
-          </div>
-
-          {/* Budget Suggestions */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Target className="h-5 w-5 text-indigo-500" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Sugerencias de Presupuesto
-              </h3>
-            </div>
-            <div className="space-y-4">
-              {budgetSuggestions.map((suggestion, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`p-1 rounded-full`}
-                        style={{ backgroundColor: `${suggestion.color}20` }}
-                      >
-                        {suggestion.icon}
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">
-                        {suggestion.category}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">Sugerido:</span>
-                      <span className="text-sm font-medium">
-                        {formatCurrency(suggestion.suggested)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width: `${Math.min(suggestion.percentage, 100)}%`,
-                        backgroundColor: suggestion.color,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">
-                      Actual: {formatCurrency(suggestion.current)}
-                    </span>
-                    <span
-                      className={`${
-                        suggestion.difference > 0
-                          ? "text-red-500"
-                          : "text-green-500"
-                      }`}
-                    >
-                      {suggestion.difference > 0 ? "+" : ""}
-                      {formatCurrency(suggestion.difference)}
-                    </span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
 
