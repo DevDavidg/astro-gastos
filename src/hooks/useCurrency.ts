@@ -1,6 +1,3 @@
-import { useGastos } from "../context/GastosContext";
-import { useEffect } from "react";
-
 const currencySymbols: Record<string, string> = {
   USD: "$",
   EUR: "€",
@@ -11,24 +8,21 @@ const currencySymbols: Record<string, string> = {
   MXN: "$",
 };
 
+const isBrowser = typeof window !== "undefined";
+
 export const useCurrency = () => {
-  const { userPreferences, updateUserPreferences } = useGastos();
-  const currency = userPreferences?.currency ?? "USD";
+  const getCurrency = () => {
+    if (!isBrowser) return "USD";
+    return localStorage.getItem("currency") || "USD";
+  };
 
-  useEffect(() => {
-    localStorage.setItem("currency", currency);
-  }, [currency]);
-
-  const setCurrency = async (newCurrency: string) => {
-    if (userPreferences) {
-      await updateUserPreferences({
-        ...userPreferences,
-        currency: newCurrency,
-      });
-    }
+  const setCurrency = (newCurrency: string) => {
+    if (!isBrowser) return;
+    localStorage.setItem("currency", newCurrency);
   };
 
   const formatCurrency = (amount: number): string => {
+    const currency = getCurrency();
     const symbol = currencySymbols[currency] || "$";
     const formatter = new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -41,7 +35,7 @@ export const useCurrency = () => {
   };
 
   return {
-    currency,
+    currency: getCurrency(),
     setCurrency,
     formatCurrency,
   };

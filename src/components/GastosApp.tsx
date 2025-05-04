@@ -15,7 +15,7 @@ const GastosApp: React.FC = () => {
               <FutureExpensesList />
             </div>
           </div>
-          <div>
+          <div className="flex justify-center items-center">
             <PieChart />
           </div>
         </div>

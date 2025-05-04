@@ -17,6 +17,7 @@ import {
   actualizarSueldoPersona as actualizarSueldoPersonaApi,
   actualizarNombrePersona as actualizarNombrePersonaApi,
   obtenerEmailPersona,
+  crearGasto,
 } from "../services/gastoService";
 import {
   getUserPreferences,
@@ -103,6 +104,19 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
       cargarDatos();
     }
   }, [user, isInitialized]);
+
+  // Add effect to listen for actualizarGastos event
+  useEffect(() => {
+    const handleActualizarGastos = () => {
+      recargarDatos();
+    };
+
+    window.addEventListener("actualizarGastos", handleActualizarGastos);
+
+    return () => {
+      window.removeEventListener("actualizarGastos", handleActualizarGastos);
+    };
+  }, []);
 
   const cargarDatos = async () => {
     if (!user) return;
@@ -214,7 +228,20 @@ export const GastosProvider: React.FC<Readonly<{ children: ReactNode }>> = ({
 
     try {
       const { otraPersonaEmail, ...gastoData } = gasto;
-      await recargarDatos();
+
+      // Create the expense in the database
+      const newGasto = await crearGasto({
+        ...gastoData,
+        usuarioid: user.id,
+        fecha: new Date(),
+        otraPersonaEmail: gastoData.escompartido ? otraPersonaEmail : undefined,
+      });
+
+      // Update local state
+      setGastos((prevGastos) => [...prevGastos, newGasto]);
+
+      // Dispatch event to update all components
+      window.dispatchEvent(new CustomEvent("actualizarGastos"));
 
       if (gastoData.escompartido && otraPersonaEmail) {
         const personaPrincipal = personas.find(

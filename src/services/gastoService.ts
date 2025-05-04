@@ -85,7 +85,7 @@ export const crearGasto = async (
     porcentajepersona1: gasto.porcentajepersona1,
     porcentajepersona2: gasto.porcentajepersona2,
     usuarioid: gasto.usuarioid,
-    otrapersonaemail: gasto.otraPersonaEmail ?? null,
+    otrapersonaemail: gasto.escompartido ? gasto.otraPersonaEmail : null,
   };
 
   const { data, error } = await supabase

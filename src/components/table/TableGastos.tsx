@@ -16,37 +16,39 @@ const TotalDisplay: React.FC<{
   const porcentajeCompartido = ((totalCompartido / total) * 100).toFixed(1);
   const porcentajeNoCompartido = ((totalNoCompartido / total) * 100).toFixed(1);
 
+  useEffect(() => {
+    // Dispatch the total to update the salary modal
+    window.dispatchEvent(
+      new CustomEvent("updateTotalExpenses", { detail: { total } })
+    );
+  }, [total]);
+
   return (
-    <div className="bg-gradient-to-r from-indigo-50 to-pink-50 rounded-lg p-4 mb-6 shadow-sm">
-      <div className="flex flex-col space-y-4">
-        <div className="flex flex-col items-center">
-          <span className="text-sm text-gray-600 mb-1">Total General</span>
-          <span className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {formatCurrency(total)}
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white p-3 rounded-lg shadow-sm">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-indigo-600 font-medium">Compartido</span>
-              <span className="font-semibold text-gray-900">
-                {formatCurrency(totalCompartido)}
-              </span>
-            </div>
-            <div className="text-xs text-indigo-500">
-              {porcentajeCompartido}% del total
-            </div>
+    <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="p-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Total General
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-500">Total</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {formatCurrency(total)}
+            </p>
           </div>
-          <div className="bg-white p-3 rounded-lg shadow-sm">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-pink-600 font-medium">No Compartido</span>
-              <span className="font-semibold text-gray-900">
-                {formatCurrency(totalNoCompartido)}
-              </span>
-            </div>
-            <div className="text-xs text-pink-500">
-              {porcentajeNoCompartido}% del total
-            </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-500">Compartido</h3>
+            <p className="text-2xl font-bold text-indigo-600">
+              {formatCurrency(totalCompartido)}
+            </p>
+            <p className="text-sm text-gray-500">{porcentajeCompartido}%</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-500">No Compartido</h3>
+            <p className="text-2xl font-bold text-green-600">
+              {formatCurrency(totalNoCompartido)}
+            </p>
+            <p className="text-sm text-gray-500">{porcentajeNoCompartido}%</p>
           </div>
         </div>
       </div>
@@ -74,6 +76,18 @@ const TableGastos = () => {
     "fecha"
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  useEffect(() => {
+    const handleActualizarGastos = () => {
+      recargarDatos();
+    };
+
+    window.addEventListener("actualizarGastos", handleActualizarGastos);
+
+    return () => {
+      window.removeEventListener("actualizarGastos", handleActualizarGastos);
+    };
+  }, [recargarDatos]);
 
   const handleSort = (criteria: "monto" | "mes" | "fecha") => {
     if (criteria === sortCriteria) {
@@ -130,25 +144,6 @@ const TableGastos = () => {
       setIsLoading(false);
     }, 300);
   }, [gastos]);
-
-  useEffect(() => {
-    const handleNuevoGasto = async (e: Event) => {
-      const customEvent = e as CustomEvent;
-      try {
-        await agregarGasto(customEvent.detail);
-
-        await recargarDatos();
-      } catch (error) {
-        console.error("Error al agregar gasto:", error);
-      }
-    };
-
-    document.addEventListener("nuevoGasto", handleNuevoGasto);
-
-    return () => {
-      document.removeEventListener("nuevoGasto", handleNuevoGasto);
-    };
-  }, [agregarGasto, recargarDatos]);
 
   const obtenerNombrePersona = (personaid: string) => {
     const persona = personas.find((p) => p.id === personaid);

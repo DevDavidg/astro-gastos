@@ -4,27 +4,32 @@ import HomeRedirect from '../components/auth/HomeRedirect.tsx';
 import GastosApp from '../components/GastosApp.tsx';
 import { AddGastoFormWrapper } from '../components/inputs/AddGastoFormWrapper';
 import { GastosProvider } from '../context/GastosContext';
+import SharedExpensesWrapper from '../components/shared-expenses/SharedExpensesWrapper';
+import SalaryModal from '../components/salary/SalaryModal';
 ---
 
 <Layout title="Expense Tracker">
 	<main class="container mx-auto px-4 py-8">
 		<HomeRedirect client:only="react" />
-		<h1 class="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 md:mb-8">
-			Expense Tracker
-		</h1>
-		<div class="grid grid-cols-1 gap-8">
+		<SalaryModal client:only="react" />
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 			<div class="bg-white rounded-lg shadow-md p-6">
-			<div class="w-full">
-				<GastosProvider client:only="react">
-					<AddGastoFormWrapper client:load />
-				</GastosProvider>
-			</div>
-		</div>
-			<div class="bg-white rounded-lg shadow-md p-6">
-			<div class="w-full">
-				<GastosApp client:load />
+				<div class="w-full">
+					<GastosProvider client:only="react">
+						<AddGastoFormWrapper client:load />
+					</GastosProvider>
 				</div>
 			</div>
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<div class="w-full">
+					<SharedExpensesWrapper client:only="react" />
+				</div>
+			</div>
+		</div>
+		<div class="mt-8">
+			<GastosProvider client:only="react">
+				<GastosApp client:load />
+			</GastosProvider>
 		</div>
 	</main>
 </Layout>
@@ -32,5 +37,19 @@ import { GastosProvider } from '../context/GastosContext';
 <script>
 	document.addEventListener('nuevoGasto', (e: any) => {
 		const customEvent = e as CustomEvent;
+		// Calculate total expenses and save to localStorage
+		const gastos = customEvent.detail?.gastos || [];
+		const totalExpenses = gastos.reduce((total: number, gasto: any) => total + gasto.monto, 0);
+		localStorage.setItem('totalExpenses', totalExpenses.toString());
+		
+		// Dispatch a custom event to trigger updates in all components
+		window.dispatchEvent(new CustomEvent('actualizarGastos'));
+	});
+
+	// Listen for expense updates from GastosProvider
+	document.addEventListener('actualizarGastos', () => {
+		const gastos = JSON.parse(localStorage.getItem('gastos') || '[]');
+		const totalExpenses = gastos.reduce((total: number, gasto: any) => total + gasto.monto, 0);
+		localStorage.setItem('totalExpenses', totalExpenses.toString());
 	});
 </script>

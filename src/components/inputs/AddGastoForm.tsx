@@ -4,6 +4,8 @@ import { PersonaSelector } from "./PersonaSelector";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { supabase } from "../../lib/supabase";
 
+const isValidEmail = (email: string) => /.+@.+\..+/.test(email);
+
 export const AddGastoForm: React.FC = () => {
   const { agregarGasto, isLoading, personas, gastos } = useGastos();
   const [isShared, setIsShared] = useState(false);
@@ -32,6 +34,11 @@ export const AddGastoForm: React.FC = () => {
     return meses[mesActual];
   });
   const formRef = useRef<HTMLFormElement>(null);
+  const [myEmail, setMyEmail] = useState<string>("");
+  const [sueldoPersona1, setSueldoPersona1] = useState<string>("");
+
+  // Sueldo de la otra persona (por email)
+  const [sueldoPersona2, setSueldoPersona2] = useState<string>("");
 
   useEffect(() => {
     if (personas && personas.length > 0) {
@@ -56,6 +63,14 @@ export const AddGastoForm: React.FC = () => {
     }
   }, [personas]);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const email = user?.email ?? "Tu usuario";
+      setMyEmail(email);
+      setSueldoPersona1(localStorage.getItem(`sueldo_${email}`) ?? "");
+    });
+  }, []);
+
   const generateDefaultDescription = () => {
     if (!mes) return "Nombre de gasto";
 
@@ -79,16 +94,6 @@ export const AddGastoForm: React.FC = () => {
   useEffect(() => {
     setDescripcion(generateDefaultDescription());
   }, [mes, gastos]);
-
-  const handlePercentage1Change = (value: number) => {
-    setPercentage1(value);
-    setPercentage2(100 - value);
-  };
-
-  const handlePercentage2Change = (value: number) => {
-    setPercentage2(value);
-    setPercentage1(100 - value);
-  };
 
   const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -128,6 +133,74 @@ export const AddGastoForm: React.FC = () => {
     percentage2,
     otraPersonaEmail,
   ]);
+
+  // Actualizar sueldoPersona2 si cambia el email
+  useEffect(() => {
+    if (isValidEmail(otraPersonaEmail)) {
+      setSueldoPersona2(
+        localStorage.getItem(`sueldo_${otraPersonaEmail}`) ?? ""
+      );
+      // Calcular porcentajes si hay ambos sueldos
+      if (sueldoPersona1) {
+        const { porcentaje1, porcentaje2 } = calcularPorcentajes(
+          parseFloat(sueldoPersona1) || 0,
+          parseFloat(localStorage.getItem(`sueldo_${otraPersonaEmail}`) ?? "0")
+        );
+        setPercentage1(porcentaje1);
+        setPercentage2(porcentaje2);
+      }
+    } else {
+      setSueldoPersona2("");
+    }
+  }, [otraPersonaEmail]);
+
+  // Calcular porcentajes
+  const calcularPorcentajes = (sueldo1: number, sueldo2: number) => {
+    if (sueldo1 === 0 && sueldo2 === 0) {
+      return { porcentaje1: 50, porcentaje2: 50 };
+    }
+    const total = sueldo1 + sueldo2;
+    const porcentaje1 = Math.round((sueldo1 / total) * 100);
+    const porcentaje2 = 100 - porcentaje1;
+    return { porcentaje1, porcentaje2 };
+  };
+
+  // Handlers para sueldo
+  const handleSueldoPersona1Change = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setSueldoPersona1(value);
+      localStorage.setItem(`sueldo_${myEmail}`, value);
+      if (isValidEmail(otraPersonaEmail)) {
+        const { porcentaje1, porcentaje2 } = calcularPorcentajes(
+          parseFloat(value) || 0,
+          parseFloat(sueldoPersona2) || 0
+        );
+        setPercentage1(porcentaje1);
+        setPercentage2(porcentaje2);
+      }
+    }
+  };
+
+  const handleSueldoPersona2Change = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setSueldoPersona2(value);
+      if (isValidEmail(otraPersonaEmail)) {
+        localStorage.setItem(`sueldo_${otraPersonaEmail}`, value);
+        const { porcentaje1, porcentaje2 } = calcularPorcentajes(
+          parseFloat(sueldoPersona1) || 0,
+          parseFloat(value) || 0
+        );
+        setPercentage1(porcentaje1);
+        setPercentage2(porcentaje2);
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -175,20 +248,23 @@ export const AddGastoForm: React.FC = () => {
 
     try {
       await agregarGasto(gasto);
-      if (formRef.current) {
-        formRef.current.reset();
-      }
+
+      // Reset form state
+      setMonto("");
+      setDescripcion(generateDefaultDescription());
       setSelectedPersona("");
       setIsShared(false);
       setPercentage1(50);
       setPercentage2(50);
       setOtraPersonaEmail("");
-      setMonto("");
-      setDescripcion(generateDefaultDescription());
-      setMes("enero");
-      window.location.reload();
+
+      // Reset form if it exists
+      if (formRef.current) {
+        formRef.current.reset();
+      }
     } catch (error) {
       console.error("Error al agregar gasto:", error);
+      alert("Hubo un error al agregar el gasto. Por favor intenta nuevamente.");
     }
   };
 
@@ -313,47 +389,83 @@ export const AddGastoForm: React.FC = () => {
               />
             </div>
 
+            {/* Sueldo y porcentaje de mi usuario */}
             <div>
               <label
-                htmlFor="percentage1"
+                htmlFor="sueldoPersona1"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Porcentaje Persona 1
+                Sueldo {myEmail}
               </label>
               <input
                 type="number"
-                id="percentage1"
-                name="percentage1"
-                min="0"
-                max="100"
-                value={percentage1}
-                onChange={(e) =>
-                  handlePercentage1Change(parseInt(e.target.value))
-                }
+                id="sueldoPersona1"
+                name="sueldoPersona1"
+                value={sueldoPersona1}
+                onChange={handleSueldoPersona1Change}
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                placeholder="Ingresa el sueldo"
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="percentage2"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Porcentaje Persona 2
-              </label>
-              <input
-                type="number"
-                id="percentage2"
-                name="percentage2"
-                min="0"
-                max="100"
-                value={percentage2}
-                onChange={(e) =>
-                  handlePercentage2Change(parseInt(e.target.value))
-                }
-                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
-              />
-            </div>
+            {/* Sueldo y porcentaje de la otra persona solo si el email es válido */}
+            {isValidEmail(otraPersonaEmail) && (
+              <>
+                <div>
+                  <label
+                    htmlFor="sueldoPersona2"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Sueldo {otraPersonaEmail}
+                  </label>
+                  <input
+                    type="number"
+                    id="sueldoPersona2"
+                    name="sueldoPersona2"
+                    value={sueldoPersona2}
+                    onChange={handleSueldoPersona2Change}
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                    placeholder="Ingresa el sueldo"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="percentage1"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Porcentaje {myEmail}
+                  </label>
+                  <input
+                    type="number"
+                    id="percentage1"
+                    name="percentage1"
+                    min="0"
+                    max="100"
+                    value={percentage1}
+                    readOnly
+                    className="w-full p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="percentage2"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Porcentaje {otraPersonaEmail}
+                  </label>
+                  <input
+                    type="number"
+                    id="percentage2"
+                    name="percentage2"
+                    min="0"
+                    max="100"
+                    value={percentage2}
+                    readOnly
+                    className="w-full p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 outline-none transition-all"
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
 
