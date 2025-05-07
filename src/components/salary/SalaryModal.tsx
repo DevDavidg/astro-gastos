@@ -57,7 +57,11 @@ const SalaryModal: React.FC = () => {
   const [totalExpenses, setTotalExpenses] = useState<number>(0);
   const [expenseHistory, setExpenseHistory] = useState<
     { date: string; amount: number }[]
-  >([]);
+  >(() => {
+    if (!isBrowser) return [];
+    const savedHistory = localStorage.getItem("expenseHistory");
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
@@ -66,18 +70,26 @@ const SalaryModal: React.FC = () => {
     // Listen for total expenses updates
     const handleTotalUpdate = (e: CustomEvent) => {
       if (e.detail?.total) {
-        setTotalExpenses(e.detail.total);
-        localStorage.setItem("totalExpenses", e.detail.total.toString());
+        const newTotal = e.detail.total;
+        setTotalExpenses(newTotal);
+        localStorage.setItem("totalExpenses", newTotal.toString());
 
-        // Update expense history
-        const newHistory = [
-          ...expenseHistory,
-          {
-            date: new Date().toLocaleDateString(),
-            amount: e.detail.total,
-          },
-        ].slice(-6); // Keep last 6 months
-        setExpenseHistory(newHistory);
+        // Update expense history only if the total has changed
+        const currentDate = new Date().toLocaleDateString();
+        const lastEntry = expenseHistory[expenseHistory.length - 1];
+
+        if (!lastEntry || lastEntry.date !== currentDate) {
+          const newHistory = [
+            ...expenseHistory,
+            {
+              date: currentDate,
+              amount: newTotal,
+            },
+          ].slice(-6); // Keep last 6 months
+
+          setExpenseHistory(newHistory);
+          localStorage.setItem("expenseHistory", JSON.stringify(newHistory));
+        }
       }
     };
 

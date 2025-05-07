@@ -1,10 +1,19 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import HomeRedirect from '../components/auth/HomeRedirect.tsx';
 import { ConfigPage } from '../components/settings/ConfigPage';
 ---
 
 <Layout title="Configuración">
-  <ConfigPage client:load />
+	<main class="container mx-auto px-4 py-8">
+		<HomeRedirect client:only="react" />
+		<div class="max-w-4xl mx-auto">
+			<div class="bg-white rounded-lg shadow-md p-6">
+				<h1 class="text-2xl font-bold text-gray-900 mb-6">Configuración</h1>
+				<ConfigPage client:load />
+			</div>
+		</div>
+	</main>
 </Layout>
 
 <script>
